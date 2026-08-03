@@ -16,6 +16,7 @@ export const SPACE_DATA = {
     dayLength: '27 Earth Days',
     composition: '73% Hydrogen, 25% Helium',
     moons: '8 Planets',
+    structure: 'Core (15,000,000 °C Thermonuclear Fusion), Radiative Zone (0.7 R), Convective Zone, Photosphere, Chromosphere & Corona',
     desc: 'The central gravitational anchor of our solar system, powering life with radiant thermonuclear fusion.',
     lore: 'Emitting 3.8 x 10^26 Watts of energy, the Sun rotates once every 27 days at its equator while driving solar winds across deep space.'
   },
@@ -36,6 +37,7 @@ export const SPACE_DATA = {
     dayLength: '230 Million Years (Galactic Orbit)',
     composition: '1 G-type Star, 8 Planets, Asteroid & Kuiper Belts',
     moons: '290+ Known Moons',
+    structure: 'Inner Terrestrial Zone (Mercury, Venus, Earth, Mars), Asteroid Belt, Outer Gas/Ice Giants, Kuiper Belt & Oort Cloud',
     desc: 'Our home planetary system, bound by the Sun’s gravitational pull, housing 8 major planets, dwarf planets, asteroid belts, and icy outer realms.',
     lore: 'Formed 4.6 billion years ago from the gravitational collapse of a giant interstellar molecular cloud, spanning across 50 Astronomical Units.'
   },
@@ -56,6 +58,7 @@ export const SPACE_DATA = {
     dayLength: '59 Earth Days',
     composition: 'Silicate Rock & Metallic Core',
     moons: '0',
+    structure: 'Massive Metallic Iron Core (85% radius, ~2,000km), Silicate Mantle (400km), Cratered Basalt Crust & Thin Exosphere',
     desc: 'The smallest and innermost planet, heavily cratered with extreme temperature fluctuations between day and night.',
     lore: 'Mercury completes an orbit around the Sun every 88 Earth days, travelling at a blistering speed of 47 km/s.'
   },
@@ -76,6 +79,7 @@ export const SPACE_DATA = {
     dayLength: '243 Earth Days',
     composition: 'Carbon Dioxide & Sulfuric Acid Clouds',
     moons: '0',
+    structure: 'Central Metallic Iron Core (3,000km), Rocky Silicate Mantle (3,000km), Silicate Crust (20-50km) & Superdense 92-atm CO2 Atmosphere',
     desc: 'Shrouded in thick toxic clouds of carbon dioxide and sulfuric acid, Venus experiences a runaway greenhouse effect.',
     lore: 'Venus rotates backwards compared to most planets and has a surface pressure 92 times greater than Earth.'
   },
@@ -101,7 +105,7 @@ export const SPACE_DATA = {
     moons: '1 (Luna)',
     continents: '7 (Asia, Africa, North America, South America, Antarctica, Europe, Australia)',
     oceans: '5 (Pacific, Atlantic, Indian, Southern, Arctic)',
-    structure: 'Crust (0-70km), Mantle (2900km), Outer Core (Iron-Nickel), Inner Core (Solid Iron)',
+    structure: 'Solid Iron Inner Core (1,220km), Liquid Outer Core (2,300km), Viscous Silicate Mantle (2,900km), Continental & Oceanic Crust (5-70km)',
     desc: 'The home world of humanity, featuring 7 distinct continents, 5 vast liquid oceans, a protective magnetic shield, and rich atmospheric oxygen.',
     lore: 'Earth is structured into 4 internal layers (Crust, Mantle, Outer Core, Inner Core) and surface division of 7 Continents and 5 Oceans, orbiting within the habitable circumstellar zone.'
   },
@@ -122,6 +126,7 @@ export const SPACE_DATA = {
     dayLength: '27.3 Earth Days',
     composition: 'Basaltic Rock & Regolith Dust',
     moons: 'Orbits Earth',
+    structure: 'Small Metallic Iron Core (240km), Partial Melt Asthenosphere, Rigid Lithospheric Mantle (1,000km), Anorthositic Crust (50km)',
     desc: 'Earth’s only permanent natural satellite, tidal locked with cratered highlands and dark volcanic maria plains.',
     lore: 'The Moon stabilizes Earth’s axial tilt, driving ocean tides and slowing Earth’s rotation across billions of years.'
   },
@@ -146,6 +151,7 @@ export const SPACE_DATA = {
     dayLength: '24.6 Hours',
     composition: 'Iron Oxide Dust & Basalt Rock',
     moons: '2 (Phobos, Deimos)',
+    structure: 'Dense Metallic Iron-Nickel-Sulfur Core (1,800km), Silicate Mantle (1,500km), Volcanic Basalt Crust (10-50km), Thin CO2 Atmosphere',
     desc: 'The Red Planet, featuring iron-oxide dust, giant extinct volcanoes like Olympus Mons, and ancient dry riverbeds.',
     lore: 'Mars hosts Olympus Mons, the largest volcano in the Solar System, standing nearly 22 km high—three times taller than Mount Everest.'
   },
@@ -172,6 +178,7 @@ export const SPACE_DATA = {
     dayLength: '9.9 Hours',
     composition: '90% Hydrogen, 10% Helium',
     moons: '95 (Io, Europa, Ganymede, Callisto...)',
+    structure: 'Dense Dense Rock & Metal Core (10-20x Earth Mass), Liquid Metallic Hydrogen Ocean (40,000km), Liquid Molecular Hydrogen Shell, Cloud Bands',
     desc: 'The colossal king of planets with turbulent cloud bands, violent lightning storms, and the iconic Great Red Spot.',
     lore: 'Jupiter contains more than twice the mass of all other planets combined and acts as a gravitational shield protecting inner planets.'
   },
@@ -200,6 +207,7 @@ export const SPACE_DATA = {
     dayLength: '10.7 Hours',
     composition: '96% Hydrogen, 3% Helium, Ice Rings',
     moons: '146 (Titan, Enceladus, Rhea...)',
+    structure: 'Dense Rock & Iron Core (~15x Earth Mass), Liquid Metallic Hydrogen Mantle, Liquid Hydrogen/Helium Layer, Ring System & Hexagon Storm',
     desc: 'Adorned with spectacular 3D rings of water ice and rock fragments, Saturn is the jewel of the Solar System.',
     lore: 'Saturn’s density is so low that if there were a bathtub large enough, the entire planet would float on water.'
   },
@@ -223,6 +231,7 @@ export const SPACE_DATA = {
     dayLength: '17.2 Hours',
     composition: 'Water, Methane & Ammonia Ices',
     moons: '28 (Titania, Oberon)',
+    structure: 'Small Rocky Core (0.5x Earth Mass), Superheated Icy Mantle (Water, Ammonia, Methane 80% Mass), Hydrogen-Helium-Methane Atmosphere',
     desc: 'An ice giant rotating sideways on an extreme 98-degree tilt, surrounded by faint dark ring loops.',
     lore: 'Uranus holds the record for the coldest atmospheric temperature measured in the Solar System at -224 °C.'
   },
@@ -246,6 +255,7 @@ export const SPACE_DATA = {
     dayLength: '16.1 Hours',
     composition: 'Methane Atmosphere & Frozen Ices',
     moons: '16 (Triton...)',
+    structure: 'Heavy Rock & Metal Core (1.2x Earth Mass), Hot Supercritical Fluid Mantle (Water, Ammonia, Methane), Supersonic Methane Atmosphere',
     desc: 'A deep azure ice giant subjected to supersonic winds reaching speeds of over 2,100 km/h.',
     lore: 'Neptune was the first planet located through mathematical prediction rather than empirical observation.'
   },
@@ -309,6 +319,7 @@ export const SPACE_DATA = {
     dayLength: '6.4 Earth Days',
     composition: '70% Rock, 30% Water Ice & Frozen Methane',
     moons: '5 (Charon, Styx, Nix, Kerberos, Hydra)',
+    structure: 'Dense Rocky Core (70% total mass), Subsurface Water Ocean, Liquid/Frozen Water Ice Mantle, Nitrogen-Methane Ice Crust (Tombaugh Regio)',
     desc: 'A famous icy dwarf planet in the Kuiper Belt with a heart-shaped nitrogen ice glacier named Tombaugh Regio.',
     lore: 'Reclassified as a dwarf planet in 2006 by the IAU, Pluto and its giant moon Charon orbit a shared center of mass outside Pluto itself.'
   },
