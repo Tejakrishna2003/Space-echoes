@@ -247,6 +247,21 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
             metalness: 0.1
           }));
 
+      // 1. Orbital Path Trajectory Ring around the Sun
+      if (pData.orbitRadius > 0) {
+        const orbitPathGeo = trackResource(new THREE.RingGeometry(pData.orbitRadius - 0.03, pData.orbitRadius + 0.03, 128));
+        const orbitPathMat = trackResource(new THREE.MeshBasicMaterial({
+          color: 0x38bdf8,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.2,
+          depthWrite: false
+        }));
+        const orbitPathMesh = new THREE.Mesh(orbitPathGeo, orbitPathMat);
+        orbitPathMesh.rotation.x = Math.PI / 2;
+        scene.add(orbitPathMesh);
+      }
+
       const pMesh = new THREE.Mesh(pGeo, pMat);
       pMesh.position.x = pData.orbitRadius;
       pMesh.renderOrder = 1;
@@ -305,32 +320,23 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
         earthRayleighMesh.renderOrder = 3;
         pMesh.add(earthRayleighMesh);
 
-        // ─────────────────────────────────────────────────────────────────────
         // PHASE 2 UPGRADE: 3D EARTH INTERNAL CUTAWAY CONCENTRIC SPHERES
-        // ─────────────────────────────────────────────────────────────────────
         earthCutawayGroup = new THREE.Group();
         earthCutawayGroup.visible = false;
         pMesh.add(earthCutawayGroup);
 
-        // 1. Inner Core (Solid Sphere, White-Hot Emissive)
         const innerCoreGeo = trackResource(new THREE.SphereGeometry(pData.size * 0.20, 32, 32));
         const innerCoreMat = trackResource(new THREE.MeshBasicMaterial({ color: 0xffffff }));
-        const innerCoreMesh = new THREE.Mesh(innerCoreGeo, innerCoreMat);
-        earthCutawayGroup.add(innerCoreMesh);
+        earthCutawayGroup.add(new THREE.Mesh(innerCoreGeo, innerCoreMat));
 
-        // 2. Outer Core (270° Wedge Shell, Molten Orange)
         const outerCoreGeo = trackResource(new THREE.SphereGeometry(pData.size * 0.42, 64, 64, 0, Math.PI * 1.5));
         const outerCoreMat = trackResource(new THREE.MeshStandardMaterial({ color: 0xff6600, roughness: 0.3, side: THREE.DoubleSide }));
-        const outerCoreMesh = new THREE.Mesh(outerCoreGeo, outerCoreMat);
-        earthCutawayGroup.add(outerCoreMesh);
+        earthCutawayGroup.add(new THREE.Mesh(outerCoreGeo, outerCoreMat));
 
-        // 3. Mantle (270° Wedge Shell, Magma Red-Brown)
         const mantleGeo = trackResource(new THREE.SphereGeometry(pData.size * 0.85, 64, 64, 0, Math.PI * 1.5));
         const mantleMat = trackResource(new THREE.MeshStandardMaterial({ color: 0x8b2500, roughness: 0.6, side: THREE.DoubleSide }));
-        const mantleMesh = new THREE.Mesh(mantleGeo, mantleMat);
-        earthCutawayGroup.add(mantleMesh);
+        earthCutawayGroup.add(new THREE.Mesh(mantleGeo, mantleMat));
 
-        // 4. Crust (270° Wedge Outer Shell, Textured NASA Earth)
         const crustGeo = trackResource(new THREE.SphereGeometry(pData.size * 1.0, 64, 64, 0, Math.PI * 1.5));
         const crustMat = trackResource(new THREE.MeshPhongMaterial({
           map: getEarthTexture(),
@@ -338,19 +344,69 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
           bumpScale: 0.05,
           side: THREE.DoubleSide
         }));
-        const crustMesh = new THREE.Mesh(crustGeo, crustMat);
-        earthCutawayGroup.add(crustMesh);
+        earthCutawayGroup.add(new THREE.Mesh(crustGeo, crustMat));
       }
 
-      // Saturn Rings
+      // 2. Earth's Moon (Luna) & Orbit Ring Path
+      if (pData.hasMoon) {
+        const moonPivot = new THREE.Group();
+        pMesh.add(moonPivot);
+
+        const moonMesh = new THREE.Mesh(
+          trackResource(new THREE.SphereGeometry(SPACE_DATA.moon.size, 32, 32)),
+          trackResource(new THREE.MeshStandardMaterial({
+            map: getMoonTexture(),
+            roughness: 0.7
+          }))
+        );
+        moonMesh.position.x = pData.moonRadius;
+        moonMesh.userData = { key: 'moon', data: SPACE_DATA.moon, parentMesh: pMesh };
+        moonPivot.add(moonMesh);
+        pMesh.userData.moonPivot = moonPivot;
+        planetMeshes.moon = moonMesh;
+        interactiveObjects.push(moonMesh);
+
+        const moonPathMesh = new THREE.Mesh(
+          trackResource(new THREE.RingGeometry(pData.moonRadius - 0.02, pData.moonRadius + 0.02, 64)),
+          trackResource(new THREE.MeshBasicMaterial({ color: 0xcccccc, side: THREE.DoubleSide, transparent: true, opacity: 0.25 }))
+        );
+        moonPathMesh.rotation.x = Math.PI / 2;
+        pMesh.add(moonPathMesh);
+      }
+
+      // 3. Extra Moons (Mars, Jupiter, Neptune) & Orbit Paths
+      if (pData.extraMoons) {
+        pMesh.userData.extraMoonPivots = [];
+        pData.extraMoons.forEach(m => {
+          const mPivot = new THREE.Group();
+          pMesh.add(mPivot);
+          const mMesh = new THREE.Mesh(
+            trackResource(new THREE.SphereGeometry(m.size, 16, 16)),
+            trackResource(new THREE.MeshStandardMaterial({ color: m.color, roughness: 0.6 }))
+          );
+          mMesh.position.x = m.radius;
+          mPivot.add(mMesh);
+          pMesh.userData.extraMoonPivots.push({ pivot: mPivot, speed: m.speed });
+
+          const mPath = new THREE.Mesh(
+            trackResource(new THREE.RingGeometry(m.radius - 0.015, m.radius + 0.015, 48)),
+            trackResource(new THREE.MeshBasicMaterial({ color: 0xaaaaaa, side: THREE.DoubleSide, transparent: true, opacity: 0.18 }))
+          );
+          mPath.rotation.x = Math.PI / 2;
+          pMesh.add(mPath);
+        });
+      }
+
+      // Saturn & Uranus Rings
       if (pData.hasRings) {
         const ringMesh = new THREE.Mesh(
           trackResource(new THREE.RingGeometry(pData.ringInner, pData.ringOuter, 64)),
           trackResource(new THREE.MeshStandardMaterial({
-            map: getSaturnRingTexture(),
+            map: key === 'saturn' ? getSaturnRingTexture() : null,
+            color: key === 'uranus' ? 0x40c4de : 0xffffff,
             side: THREE.DoubleSide,
             transparent: true,
-            opacity: 0.9,
+            opacity: key === 'uranus' ? 0.4 : 0.9,
             roughness: 0.3
           }))
         );
