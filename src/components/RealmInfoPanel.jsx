@@ -12,7 +12,7 @@ export default function RealmInfoPanel({ selectedBodyKey, fps, isCutawayOpen }) 
   return (
     <div
       id="hud-left-panel"
-      className="fixed bottom-hud-gutter left-edge-margin pointer-events-auto flex flex-col space-y-xs hud-animate z-30 max-w-sm"
+      className="fixed bottom-hud-gutter left-edge-margin pointer-events-auto flex flex-col space-y-xs hud-animate z-30 max-w-sm glass-panel p-4 rounded-xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-md"
       style={{ animationDelay: '0.8s' }}
     >
       <div className="flex items-center space-x-md text-primary-fixed/80">
@@ -25,7 +25,7 @@ export default function RealmInfoPanel({ selectedBodyKey, fps, isCutawayOpen }) 
 
       <h1 
         key={keyTrigger}
-        className="font-headline-lg text-3xl md:text-5xl text-primary font-light tracking-wide drop-shadow-md animate-fadeIn"
+        className="font-headline-lg text-3xl md:text-4xl text-primary font-light tracking-wide drop-shadow-md animate-fadeIn"
       >
         {body.name}
       </h1>
@@ -36,7 +36,7 @@ export default function RealmInfoPanel({ selectedBodyKey, fps, isCutawayOpen }) 
 
       {/* Earth Cutaway Active Layer Breakdown */}
       {selectedBodyKey === 'earth' && isCutawayOpen && (
-        <div className="mt-3 p-3 rounded bg-black/60 border border-amber-400/50 backdrop-blur-md animate-fadeIn">
+        <div className="mt-3 p-3 rounded bg-black/80 border border-amber-400/50 backdrop-blur-md animate-fadeIn">
           <div className="text-amber-400 font-bold text-xs uppercase tracking-widest flex items-center space-x-2 mb-2">
             <span className="material-symbols-outlined text-sm animate-spin-slow">layers</span>
             <span>3D GEOLOGICAL CUTAWAY ACTIVE</span>

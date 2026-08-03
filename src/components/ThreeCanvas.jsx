@@ -90,7 +90,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
 
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(width, height),
-      0.85, 0.4, 0.85
+      0.45, 0.4, 0.88
     );
     composer.addPass(bloomPass);
     composer.addPass(new OutputPass());
@@ -506,13 +506,13 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     const starColors = new Float32Array(starCount * 3);
 
     const galaxyGroup = new THREE.Group();
-    galaxyGroup.position.set(0, -30, -50);
+    galaxyGroup.position.set(0, -180, -350);
     scene.add(galaxyGroup);
 
-    galaxyGroup.add(new THREE.PointLight(0xffea9f, 6.0, 60));
+    galaxyGroup.add(new THREE.PointLight(0xffea9f, 1.5, 80));
     galaxyGroup.add(new THREE.Mesh(
       trackResource(new THREE.SphereGeometry(3.5, 32, 32)),
-      trackResource(new THREE.MeshBasicMaterial({ color: 0xfff4cc, transparent: true, opacity: 0.95 }))
+      trackResource(new THREE.MeshBasicMaterial({ color: 0xfff4cc, transparent: true, opacity: 0.35, depthWrite: false }))
     ));
 
     for (let i = 0; i < starCount; i++) {
