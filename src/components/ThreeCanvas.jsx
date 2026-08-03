@@ -588,7 +588,16 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
         x = Math.cos(armOffset + spinAngle) * r + (Math.random() - 0.5) * (r * 0.12);
         y = (Math.random() - 0.5) * (r * 0.12);
         z = Math.sin(armOffset + spinAngle) * r + (Math.random() - 0.5) * (r * 0.12);
-        mixedColor.setHSL(0.55 + Math.random() * 0.1, 0.85, 0.75 + Math.random() * 0.2);
+
+        // Realistic arm star color: inner warm yellow-white, outer hot blue, red giant pockets
+        const starRand = Math.random();
+        if (r < 40) {
+          mixedColor.setHSL(0.10 + Math.random() * 0.05, 0.8, 0.72 + Math.random() * 0.2); // inner: warm yellow-white
+        } else if (starRand < 0.15) {
+          mixedColor.setHSL(0.02 + Math.random() * 0.03, 0.9, 0.65 + Math.random() * 0.2); // red giant pocket
+        } else {
+          mixedColor.setHSL(0.57 + Math.random() * 0.09, 0.85, 0.78 + Math.random() * 0.2); // outer: hot blue-white
+        }
       }
 
       starPos[i * 3] = x;
@@ -626,21 +635,32 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     nebulaGroup.position.set(120, 20, -180);
     scene.add(nebulaGroup);
 
-    const nebParticleCount = 3500;
+    // Outer wispy lobe shell (4,500 particles — hydrogen purple + oxygen teal)
+    const nebParticleCount = 4500;
     const nebGeo = trackResource(new THREE.BufferGeometry());
     const nebPos = new Float32Array(nebParticleCount * 3);
     const nebCols = new Float32Array(nebParticleCount * 3);
 
     for (let i = 0; i < nebParticleCount; i++) {
-      const r = Math.random() * 40;
+      // Bilobed wispy structure: 2 ellipsoidal lobes
+      const lobe = i < nebParticleCount * 0.5 ? -1 : 1;
+      const r = 12 + Math.random() * 28;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.random() * Math.PI;
 
-      nebPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      nebPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      nebPos[i * 3] = (r * Math.sin(phi) * Math.cos(theta)) + lobe * 12;
+      nebPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta) * 0.65;
       nebPos[i * 3 + 2] = r * Math.cos(phi);
 
-      const col = new THREE.Color().setHSL(0.80 + Math.random() * 0.15, 0.9, 0.6 + Math.random() * 0.3);
+      const nebRand = Math.random();
+      const col = new THREE.Color();
+      if (nebRand < 0.55) {
+        col.setHSL(0.80 + Math.random() * 0.10, 0.95, 0.58 + Math.random() * 0.25); // Hydrogen-alpha magenta/violet
+      } else if (nebRand < 0.85) {
+        col.setHSL(0.50 + Math.random() * 0.08, 0.90, 0.62 + Math.random() * 0.2); // OIII teal/cyan
+      } else {
+        col.setHSL(0.02 + Math.random() * 0.04, 0.90, 0.65 + Math.random() * 0.2); // SII red
+      }
       nebCols[i * 3] = col.r;
       nebCols[i * 3 + 1] = col.g;
       nebCols[i * 3 + 2] = col.b;
@@ -649,10 +669,35 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     nebGeo.setAttribute('color', new THREE.BufferAttribute(nebCols, 3));
 
     nebulaGroup.add(new THREE.Points(nebGeo, trackResource(new THREE.PointsMaterial({
-      size: 1.8,
+      size: 2.2,
       vertexColors: true,
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.78,
+      blending: THREE.AdditiveBlending
+    }))));
+
+    // Dense bright emission core (1,200 particles)
+    const nebCoreCount = 1200;
+    const nebCoreGeo = trackResource(new THREE.BufferGeometry());
+    const nebCorePos = new Float32Array(nebCoreCount * 3);
+    const nebCoreCols = new Float32Array(nebCoreCount * 3);
+    for (let i = 0; i < nebCoreCount; i++) {
+      const cr = Math.random() * 8;
+      const cTheta = Math.random() * Math.PI * 2;
+      const cPhi = Math.random() * Math.PI;
+      nebCorePos[i * 3] = cr * Math.sin(cPhi) * Math.cos(cTheta);
+      nebCorePos[i * 3 + 1] = cr * Math.sin(cPhi) * Math.sin(cTheta);
+      nebCorePos[i * 3 + 2] = cr * Math.cos(cPhi);
+      const cc = new THREE.Color().setHSL(0.78 + Math.random() * 0.08, 1.0, 0.82 + Math.random() * 0.18);
+      nebCoreCols[i * 3] = cc.r; nebCoreCols[i * 3 + 1] = cc.g; nebCoreCols[i * 3 + 2] = cc.b;
+    }
+    nebCoreGeo.setAttribute('position', new THREE.BufferAttribute(nebCorePos, 3));
+    nebCoreGeo.setAttribute('color', new THREE.BufferAttribute(nebCoreCols, 3));
+    nebulaGroup.add(new THREE.Points(nebCoreGeo, trackResource(new THREE.PointsMaterial({
+      size: 3.5,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.95,
       blending: THREE.AdditiveBlending
     }))));
 
@@ -677,20 +722,45 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     const androCols = new Float32Array(androStarCount * 3);
 
     for (let i = 0; i < androStarCount; i++) {
-      const r = Math.random() * 65;
-      const theta = Math.random() * Math.PI * 2;
-      const x = Math.cos(theta) * r;
-      const y = (Math.random() - 0.5) * (r * 0.2);
-      const z = Math.sin(theta) * r * 0.6;
+      const androColor = new THREE.Color();
+      const isBulge = i < 4000;
+
+      let x, y, z;
+      if (isBulge) {
+        // Central bulge: warm golden-orange stars
+        const r = Math.random() * 12;
+        const theta = Math.random() * Math.PI * 2;
+        x = Math.cos(theta) * r * 1.5 + (Math.random() - 0.5) * 2;
+        y = (Math.random() - 0.5) * (r * 0.35);
+        z = Math.sin(theta) * r * 0.8 + (Math.random() - 0.5) * 2;
+        androColor.setHSL(0.09 + Math.random() * 0.06, 0.9, 0.68 + Math.random() * 0.2);
+      } else {
+        // Spiral arms: 4-arm structure tilted (Andromeda seen at ~77° angle)
+        const r = 10 + Math.random() * 58;
+        const spinAngle = r * 0.10;
+        const armsCount = 4;
+        const armOffset = (i % armsCount) * ((Math.PI * 2) / armsCount);
+        x = Math.cos(armOffset + spinAngle) * r + (Math.random() - 0.5) * (r * 0.10);
+        y = (Math.random() - 0.5) * (r * 0.09);
+        z = Math.sin(armOffset + spinAngle) * r * 0.55 + (Math.random() - 0.5) * (r * 0.08);
+
+        const andRand = Math.random();
+        if (andRand < 0.60) {
+          androColor.setHSL(0.60 + Math.random() * 0.08, 0.80, 0.76 + Math.random() * 0.2); // blue-white
+        } else if (andRand < 0.85) {
+          androColor.setHSL(0.10 + Math.random() * 0.05, 0.75, 0.72 + Math.random() * 0.2); // warm yellow
+        } else {
+          androColor.setHSL(0.02 + Math.random() * 0.03, 0.9, 0.65 + Math.random() * 0.15); // red giants
+        }
+      }
 
       androPos[i * 3] = x;
       androPos[i * 3 + 1] = y;
       androPos[i * 3 + 2] = z;
 
-      const col = new THREE.Color().setHSL(0.95 + Math.random() * 0.1, 0.85, 0.7);
-      androCols[i * 3] = col.r;
-      androCols[i * 3 + 1] = col.g;
-      androCols[i * 3 + 2] = col.b;
+      androCols[i * 3] = androColor.r;
+      androCols[i * 3 + 1] = androColor.g;
+      androCols[i * 3 + 2] = androColor.b;
     }
     androGeo.setAttribute('position', new THREE.BufferAttribute(androPos, 3));
     androGeo.setAttribute('color', new THREE.BufferAttribute(androCols, 3));
