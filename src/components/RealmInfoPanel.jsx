@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SPACE_DATA } from '../data/spaceData';
 
-export default function RealmInfoPanel({ selectedBodyKey, fps }) {
+export default function RealmInfoPanel({ selectedBodyKey, fps, isCutawayOpen }) {
   const body = SPACE_DATA[selectedBodyKey] || SPACE_DATA.earth;
   const [keyTrigger, setKeyTrigger] = useState(0);
 
@@ -33,6 +33,34 @@ export default function RealmInfoPanel({ selectedBodyKey, fps }) {
       <p className="font-body-md text-xs text-on-surface-variant leading-relaxed">
         {body.desc}
       </p>
+
+      {/* Earth Cutaway Active Layer Breakdown */}
+      {selectedBodyKey === 'earth' && isCutawayOpen && (
+        <div className="mt-3 p-3 rounded bg-black/60 border border-amber-400/50 backdrop-blur-md animate-fadeIn">
+          <div className="text-amber-400 font-bold text-xs uppercase tracking-widest flex items-center space-x-2 mb-2">
+            <span className="material-symbols-outlined text-sm animate-spin-slow">layers</span>
+            <span>3D GEOLOGICAL CUTAWAY ACTIVE</span>
+          </div>
+          <div className="space-y-1.5 text-[10px] font-label-sm">
+            <div className="flex justify-between items-center text-emerald-300">
+              <span>CRUST (SURFACE)</span>
+              <span className="font-bold">0 – 70 KM</span>
+            </div>
+            <div className="flex justify-between items-center text-red-400">
+              <span>MANTLE (MAGMA ROCK)</span>
+              <span className="font-bold">2,900 KM</span>
+            </div>
+            <div className="flex justify-between items-center text-orange-400">
+              <span>OUTER CORE (MOLTEN IRON)</span>
+              <span className="font-bold">2,200 KM</span>
+            </div>
+            <div className="flex justify-between items-center text-yellow-200">
+              <span>INNER CORE (SOLID IRON-NICKEL)</span>
+              <span className="font-bold">1,220 KM</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="pt-2 grid grid-cols-2 gap-2 text-[10px] font-label-sm text-on-surface-variant uppercase border-t border-white/10 mt-2">
         <div>DISTANCE: <span className="text-primary-fixed font-bold">{body.distance}</span></div>

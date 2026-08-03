@@ -12,22 +12,25 @@ import {
   getEarthBumpMap,
   getEarthNightTexture,
   getEarthCloudTexture,
+  getMercuryTexture,
   getMarsTexture,
   getJupiterTexture,
   getSaturnTexture,
   getSaturnRingTexture,
   getMoonTexture,
   getVenusTexture,
-  getIceGiantTexture
+  getIceGiantTexture,
+  getBlackHoleAccretionTexture
 } from '../utils/planetTextureGenerator';
 
-export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed, setFps }) {
+export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed, setFps, isCutawayOpen }) {
   const mountRef = useRef(null);
   const tooltipRef = useRef(null);
 
   // Smooth State Refs
   const selectedBodyKeyRef = useRef(selectedBodyKey);
   const timeSpeedRef = useRef(timeSpeed);
+  const isCutawayOpenRef = useRef(isCutawayOpen);
 
   useEffect(() => {
     selectedBodyKeyRef.current = selectedBodyKey;
@@ -36,6 +39,10 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
   useEffect(() => {
     timeSpeedRef.current = timeSpeed;
   }, [timeSpeed]);
+
+  useEffect(() => {
+    isCutawayOpenRef.current = isCutawayOpen;
+  }, [isCutawayOpen]);
 
   // Smooth Orbit & Zoom State
   const zoomDistanceRef = useRef(35);
@@ -66,7 +73,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
 
     // 1. Core WebGL Setup
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 2000);
+    const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 3000);
     camera.position.set(0, 20, zoomDistanceRef.current);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
@@ -83,7 +90,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
 
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(width, height),
-      0.8, 0.4, 0.85
+      0.85, 0.4, 0.85
     );
     composer.addPass(bloomPass);
     composer.addPass(new OutputPass());
@@ -103,12 +110,16 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     const planetMeshes = {};
     const interactiveObjects = [];
     let earthCloudsMesh = null;
+    let earthRayleighMesh = null;
+    let earthCutawayGroup = null;
     let solarProminenceGroup = null;
+    let blackHoleAccretionRing = null;
+    let cometMesh = null;
 
     const getTextureForPlanet = (key) => {
       switch (key) {
         case 'sun': return getSunTexture();
-        case 'mercury': return getMoonTexture();
+        case 'mercury': return getMercuryTexture(); // Phase 1 Upgrade: Custom Mercury Basalt
         case 'venus': return getVenusTexture();
         case 'earth': return getEarthTexture();
         case 'moon': return getMoonTexture();
@@ -132,7 +143,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       const v = Math.random();
       const theta = u * 2.0 * Math.PI;
       const phi = Math.acos(2.0 * v - 1.0);
-      const r = 800 + Math.random() * 200;
+      const r = 1000 + Math.random() * 300;
 
       skydomePos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       skydomePos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
@@ -155,6 +166,24 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     }));
     scene.add(new THREE.Points(skydomeGeo, skydomeMat));
 
+    // Phase 4 Polish: Ambient Cosmic Dust Floating Particles
+    const dustCount = 2000;
+    const dustGeo = trackResource(new THREE.BufferGeometry());
+    const dustPos = new Float32Array(dustCount * 3);
+    for (let i = 0; i < dustCount; i++) {
+      dustPos[i * 3] = (Math.random() - 0.5) * 300;
+      dustPos[i * 3 + 1] = (Math.random() - 0.5) * 150;
+      dustPos[i * 3 + 2] = (Math.random() - 0.5) * 300;
+    }
+    dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+    scene.add(new THREE.Points(dustGeo, trackResource(new THREE.PointsMaterial({
+      size: 0.8,
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.45,
+      blending: THREE.AdditiveBlending
+    }))));
+
     // 5. The Sun
     const sunData = SPACE_DATA.sun;
     const sunGeo = trackResource(new THREE.SphereGeometry(sunData.size, 64, 64));
@@ -165,23 +194,13 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     planetMeshes.sun = sunMesh;
     interactiveObjects.push(sunMesh);
 
-    // Soft Volumetric Corona Plasma Glow (No Hard Outer Rings)
+    // Soft Volumetric Corona Plasma Glow
     sunMesh.add(new THREE.Mesh(
       trackResource(new THREE.SphereGeometry(sunData.size * 1.15, 32, 32)),
       trackResource(new THREE.MeshBasicMaterial({
         color: 0xffaa00,
         transparent: true,
         opacity: 0.25,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      }))
-    ));
-    sunMesh.add(new THREE.Mesh(
-      trackResource(new THREE.SphereGeometry(sunData.size * 1.3, 32, 32)),
-      trackResource(new THREE.MeshBasicMaterial({
-        color: 0xff4400,
-        transparent: true,
-        opacity: 0.15,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       }))
@@ -210,7 +229,6 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       const pGeo = trackResource(new THREE.SphereGeometry(pData.size, 64, 64));
       const pTex = getTextureForPlanet(key);
       
-      // Use MeshPhongMaterial for Earth (Specular Ocean Glint + Topographic Bump Map + Emissive Night Lights)
       const pMat = key === 'earth'
         ? trackResource(new THREE.MeshPhongMaterial({
             map: pTex,
@@ -233,7 +251,6 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       pMesh.position.x = pData.orbitRadius;
       pMesh.renderOrder = 1;
       
-      // Apply Astronomical Axial Tilt
       if (pData.tilt) {
         pMesh.rotation.z = THREE.MathUtils.degToRad(pData.tilt);
       }
@@ -243,9 +260,8 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       planetMeshes[key] = pMesh;
       interactiveObjects.push(pMesh);
 
-      // Hyper-Real Earth: Clouds & Rayleigh Atmosphere
+      // Hyper-Real Earth: Clouds, Atmosphere & Phase 2 3D Cutaway Group
       if (key === 'earth') {
-        // Cloud layer — NormalBlending with 0.22 opacity for natural weather wisps
         const cloudGeo = trackResource(new THREE.SphereGeometry(pData.size * 1.025, 64, 64));
         const cloudMat = trackResource(new THREE.MeshStandardMaterial({
           map: getEarthCloudTexture(),
@@ -258,11 +274,9 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
         earthCloudsMesh.renderOrder = 2;
         pMesh.add(earthCloudsMesh);
 
-        // Fresnel Atmospheric Limb Glow Shader (1.05 size, 3.8 exponent for thin, elegant horizon glow)
+        // Rayleigh Atmosphere Shader
         const rayleighMat = trackResource(new THREE.ShaderMaterial({
-          uniforms: {
-            color: { value: new THREE.Color(0x0077ff) }
-          },
+          uniforms: { color: { value: new THREE.Color(0x0077ff) } },
           vertexShader: `
             varying vec3 vNormal;
             void main() {
@@ -284,69 +298,48 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
           depthWrite: false,
           side: THREE.BackSide
         }));
-        const rayleighMesh = new THREE.Mesh(
+        earthRayleighMesh = new THREE.Mesh(
           trackResource(new THREE.SphereGeometry(pData.size * 1.05, 48, 48)),
           rayleighMat
         );
-        rayleighMesh.renderOrder = 3;
-        pMesh.add(rayleighMesh);
-      }
+        earthRayleighMesh.renderOrder = 3;
+        pMesh.add(earthRayleighMesh);
 
-      // Atmospheric Glow Shells
-      if (key === 'venus' || key === 'mars' || key === 'neptune') {
-        pMesh.add(new THREE.Mesh(
-          trackResource(new THREE.SphereGeometry(pData.size * 1.06, 32, 32)),
-          trackResource(new THREE.MeshBasicMaterial({
-            color: key === 'venus' ? 0xffcc33 : (key === 'mars' ? 0xff4400 : 0x1e429f),
-            transparent: true, opacity: 0.25, side: THREE.BackSide
-          }))
-        ));
-      }
+        // ─────────────────────────────────────────────────────────────────────
+        // PHASE 2 UPGRADE: 3D EARTH INTERNAL CUTAWAY CONCENTRIC SPHERES
+        // ─────────────────────────────────────────────────────────────────────
+        earthCutawayGroup = new THREE.Group();
+        earthCutawayGroup.visible = false;
+        pMesh.add(earthCutawayGroup);
 
-      // Orbital Path Ring
-      const pathGeo = trackResource(new THREE.RingGeometry(pData.orbitRadius - 0.05, pData.orbitRadius + 0.05, 128));
-      const pathMat = trackResource(new THREE.MeshBasicMaterial({ color: pData.colorHex, side: THREE.DoubleSide, transparent: true, opacity: 0.3 }));
-      const pathMesh = new THREE.Mesh(pathGeo, pathMat);
-      pathMesh.rotation.x = Math.PI / 2;
-      scene.add(pathMesh);
+        // 1. Inner Core (Solid Sphere, White-Hot Emissive)
+        const innerCoreGeo = trackResource(new THREE.SphereGeometry(pData.size * 0.20, 32, 32));
+        const innerCoreMat = trackResource(new THREE.MeshBasicMaterial({ color: 0xffffff }));
+        const innerCoreMesh = new THREE.Mesh(innerCoreGeo, innerCoreMat);
+        earthCutawayGroup.add(innerCoreMesh);
 
-      // Earth Moon (Luna)
-      if (pData.hasMoon) {
-        const moonPivot = new THREE.Group();
-        pMesh.add(moonPivot);
-        const moonMesh = new THREE.Mesh(
-          trackResource(new THREE.SphereGeometry(SPACE_DATA.moon.size, 32, 32)),
-          trackResource(new THREE.MeshStandardMaterial({ map: getMoonTexture(), roughness: 0.6 }))
-        );
-        moonMesh.position.x = pData.moonRadius;
-        moonMesh.userData = { key: 'moon', data: SPACE_DATA.moon, parentMesh: pMesh };
-        moonPivot.add(moonMesh);
-        pMesh.userData.moonPivot = moonPivot;
-        planetMeshes.moon = moonMesh;
-        interactiveObjects.push(moonMesh);
+        // 2. Outer Core (270° Wedge Shell, Molten Orange)
+        const outerCoreGeo = trackResource(new THREE.SphereGeometry(pData.size * 0.42, 64, 64, 0, Math.PI * 1.5));
+        const outerCoreMat = trackResource(new THREE.MeshStandardMaterial({ color: 0xff6600, roughness: 0.3, side: THREE.DoubleSide }));
+        const outerCoreMesh = new THREE.Mesh(outerCoreGeo, outerCoreMat);
+        earthCutawayGroup.add(outerCoreMesh);
 
-        const moonPathMesh = new THREE.Mesh(
-          trackResource(new THREE.RingGeometry(pData.moonRadius - 0.03, pData.moonRadius + 0.03, 64)),
-          trackResource(new THREE.MeshBasicMaterial({ color: 0xcccccc, side: THREE.DoubleSide, transparent: true, opacity: 0.2 }))
-        );
-        moonPathMesh.rotation.x = Math.PI / 2;
-        pMesh.add(moonPathMesh);
-      }
+        // 3. Mantle (270° Wedge Shell, Magma Red-Brown)
+        const mantleGeo = trackResource(new THREE.SphereGeometry(pData.size * 0.85, 64, 64, 0, Math.PI * 1.5));
+        const mantleMat = trackResource(new THREE.MeshStandardMaterial({ color: 0x8b2500, roughness: 0.6, side: THREE.DoubleSide }));
+        const mantleMesh = new THREE.Mesh(mantleGeo, mantleMat);
+        earthCutawayGroup.add(mantleMesh);
 
-      // Extra Moons (Mars, Jupiter, Neptune)
-      if (pData.extraMoons) {
-        pMesh.userData.extraMoonPivots = [];
-        pData.extraMoons.forEach(m => {
-          const mPivot = new THREE.Group();
-          pMesh.add(mPivot);
-          const mMesh = new THREE.Mesh(
-            trackResource(new THREE.SphereGeometry(m.size, 16, 16)),
-            trackResource(new THREE.MeshStandardMaterial({ color: m.color, roughness: 0.6 }))
-          );
-          mMesh.position.x = m.radius;
-          mPivot.add(mMesh);
-          pMesh.userData.extraMoonPivots.push({ pivot: mPivot, speed: m.speed });
-        });
+        // 4. Crust (270° Wedge Outer Shell, Textured NASA Earth)
+        const crustGeo = trackResource(new THREE.SphereGeometry(pData.size * 1.0, 64, 64, 0, Math.PI * 1.5));
+        const crustMat = trackResource(new THREE.MeshPhongMaterial({
+          map: getEarthTexture(),
+          bumpMap: getEarthBumpMap(),
+          bumpScale: 0.05,
+          side: THREE.DoubleSide
+        }));
+        const crustMesh = new THREE.Mesh(crustGeo, crustMat);
+        earthCutawayGroup.add(crustMesh);
       }
 
       // Saturn Rings
@@ -366,7 +359,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       }
     });
 
-    // 7. InstancedMesh Asteroid Belt (1 draw call instead of 1,500)
+    // 7. Instanced Asteroid Belt
     const astCount = 1500;
     const astGeo = trackResource(new THREE.DodecahedronGeometry(0.08, 0));
     const astMat = trackResource(new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.7 }));
@@ -391,7 +384,65 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     instancedAsteroids.instanceMatrix.needsUpdate = true;
     scene.add(instancedAsteroids);
 
-    // 8. NASA Barred Spiral Galaxy
+    // ─────────────────────────────────────────────────────────────────────────
+    // PHASE 3 UPGRADE: KUIPER BELT & OORT CLOUD (Outer Realm Asteroid Ring)
+    // ─────────────────────────────────────────────────────────────────────────
+    const kuiperData = SPACE_DATA.kuiperbelt;
+    const kuiperCount = 1200;
+    const kuiperGeo = trackResource(new THREE.DodecahedronGeometry(0.12, 0));
+    const kuiperMat = trackResource(new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.4 }));
+    const instancedKuiper = new THREE.InstancedMesh(kuiperGeo, kuiperMat, kuiperCount);
+
+    const kuiperList = [];
+    for (let i = 0; i < kuiperCount; i++) {
+      const radius = 42.0 + Math.random() * 8.0;
+      const angle = Math.random() * Math.PI * 2;
+      const y = (Math.random() - 0.5) * 3.5;
+      const rot = new THREE.Euler(Math.random(), Math.random(), Math.random());
+
+      kuiperList.push({ radius, angle, y, rot });
+      dummy.position.set(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
+      dummy.rotation.copy(rot);
+      dummy.updateMatrix();
+      instancedKuiper.setMatrixAt(i, dummy.matrix);
+    }
+    instancedKuiper.instanceMatrix.needsUpdate = true;
+    scene.add(instancedKuiper);
+
+    // Oort Cloud Diffuse Spherical Shell
+    const oortCount = 3000;
+    const oortGeo = trackResource(new THREE.BufferGeometry());
+    const oortPos = new Float32Array(oortCount * 3);
+    for (let i = 0; i < oortCount; i++) {
+      const u = Math.random();
+      const v = Math.random();
+      const theta = u * 2.0 * Math.PI;
+      const phi = Math.acos(2.0 * v - 1.0);
+      const r = 160 + Math.random() * 80;
+
+      oortPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      oortPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      oortPos[i * 3 + 2] = r * Math.cos(phi);
+    }
+    oortGeo.setAttribute('position', new THREE.BufferAttribute(oortPos, 3));
+    scene.add(new THREE.Points(oortGeo, trackResource(new THREE.PointsMaterial({
+      size: 1.0,
+      color: 0x93c5fd,
+      transparent: true,
+      opacity: 0.35
+    }))));
+
+    // Register Kuiper Belt Pivot for target camera navigation
+    const kuiperMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(kuiperData.size, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
+    kuiperMesh.position.set(0, 0, 46.0);
+    kuiperMesh.userData = { key: 'kuiperbelt', data: kuiperData };
+    scene.add(kuiperMesh);
+    planetMeshes.kuiperbelt = kuiperMesh;
+    interactiveObjects.push(kuiperMesh);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 8. MILKY WAY GALAXY
+    // ─────────────────────────────────────────────────────────────────────────
     const starCount = 35000;
     const starGeo = trackResource(new THREE.BufferGeometry());
     const starPos = new Float32Array(starCount * 3);
@@ -450,6 +501,150 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       opacity: 0.9,
       blending: THREE.AdditiveBlending
     }))));
+
+    const galaxyTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(SPACE_DATA.galaxy.size, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
+    galaxyTargetMesh.position.copy(galaxyGroup.position);
+    galaxyTargetMesh.userData = { key: 'galaxy', data: SPACE_DATA.galaxy };
+    scene.add(galaxyTargetMesh);
+    planetMeshes.galaxy = galaxyTargetMesh;
+    interactiveObjects.push(galaxyTargetMesh);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // PHASE 3 UPGRADE: DEEP SPACE NEBULAE (M42 Stellar Nursery)
+    // ─────────────────────────────────────────────────────────────────────────
+    const nebulaData = SPACE_DATA.nebula;
+    const nebulaGroup = new THREE.Group();
+    nebulaGroup.position.set(120, 20, -180);
+    scene.add(nebulaGroup);
+
+    const nebParticleCount = 3500;
+    const nebGeo = trackResource(new THREE.BufferGeometry());
+    const nebPos = new Float32Array(nebParticleCount * 3);
+    const nebCols = new Float32Array(nebParticleCount * 3);
+
+    for (let i = 0; i < nebParticleCount; i++) {
+      const r = Math.random() * 40;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI;
+
+      nebPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      nebPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      nebPos[i * 3 + 2] = r * Math.cos(phi);
+
+      const col = new THREE.Color().setHSL(0.80 + Math.random() * 0.15, 0.9, 0.6 + Math.random() * 0.3);
+      nebCols[i * 3] = col.r;
+      nebCols[i * 3 + 1] = col.g;
+      nebCols[i * 3 + 2] = col.b;
+    }
+    nebGeo.setAttribute('position', new THREE.BufferAttribute(nebPos, 3));
+    nebGeo.setAttribute('color', new THREE.BufferAttribute(nebCols, 3));
+
+    nebulaGroup.add(new THREE.Points(nebGeo, trackResource(new THREE.PointsMaterial({
+      size: 1.8,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.75,
+      blending: THREE.AdditiveBlending
+    }))));
+
+    const nebulaTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(nebulaData.size, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
+    nebulaTargetMesh.position.copy(nebulaGroup.position);
+    nebulaTargetMesh.userData = { key: 'nebula', data: nebulaData };
+    scene.add(nebulaTargetMesh);
+    planetMeshes.nebula = nebulaTargetMesh;
+    interactiveObjects.push(nebulaTargetMesh);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // PHASE 3 UPGRADE: ANDROMEDA GALAXY (M31)
+    // ─────────────────────────────────────────────────────────────────────────
+    const androData = SPACE_DATA.andromeda;
+    const androGroup = new THREE.Group();
+    androGroup.position.set(-160, 40, -220);
+    scene.add(androGroup);
+
+    const androStarCount = 20000;
+    const androGeo = trackResource(new THREE.BufferGeometry());
+    const androPos = new Float32Array(androStarCount * 3);
+    const androCols = new Float32Array(androStarCount * 3);
+
+    for (let i = 0; i < androStarCount; i++) {
+      const r = Math.random() * 65;
+      const theta = Math.random() * Math.PI * 2;
+      const x = Math.cos(theta) * r;
+      const y = (Math.random() - 0.5) * (r * 0.2);
+      const z = Math.sin(theta) * r * 0.6;
+
+      androPos[i * 3] = x;
+      androPos[i * 3 + 1] = y;
+      androPos[i * 3 + 2] = z;
+
+      const col = new THREE.Color().setHSL(0.95 + Math.random() * 0.1, 0.85, 0.7);
+      androCols[i * 3] = col.r;
+      androCols[i * 3 + 1] = col.g;
+      androCols[i * 3 + 2] = col.b;
+    }
+    androGeo.setAttribute('position', new THREE.BufferAttribute(androPos, 3));
+    androGeo.setAttribute('color', new THREE.BufferAttribute(androCols, 3));
+
+    androGroup.add(new THREE.Points(androGeo, trackResource(new THREE.PointsMaterial({
+      size: 0.4,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending
+    }))));
+
+    const androTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(androData.size, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
+    androTargetMesh.position.copy(androGroup.position);
+    androTargetMesh.userData = { key: 'andromeda', data: androData };
+    scene.add(androTargetMesh);
+    planetMeshes.andromeda = androTargetMesh;
+    interactiveObjects.push(androTargetMesh);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // PHASE 3 UPGRADE: SUPERMASSIVE BLACK HOLE & ACCRETION DISK
+    // ─────────────────────────────────────────────────────────────────────────
+    const bhData = SPACE_DATA.blackhole;
+    const bhGroup = new THREE.Group();
+    bhGroup.position.set(220, 0, -120);
+    scene.add(bhGroup);
+
+    // Event Horizon Solid Black Sphere
+    const eventHorizonMesh = new THREE.Mesh(
+      trackResource(new THREE.SphereGeometry(bhData.size, 64, 64)),
+      trackResource(new THREE.MeshBasicMaterial({ color: 0x000000 }))
+    );
+    bhGroup.add(eventHorizonMesh);
+
+    // Relativistic Accretion Ring
+    blackHoleAccretionRing = new THREE.Mesh(
+      trackResource(new THREE.RingGeometry(bhData.size * 1.4, bhData.size * 3.5, 64)),
+      trackResource(new THREE.MeshStandardMaterial({
+        map: getBlackHoleAccretionTexture(),
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending
+      }))
+    );
+    blackHoleAccretionRing.rotation.x = Math.PI / 2.2;
+    bhGroup.add(blackHoleAccretionRing);
+
+    const bhTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(bhData.size * 3.0, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
+    bhTargetMesh.position.copy(bhGroup.position);
+    bhTargetMesh.userData = { key: 'blackhole', data: bhData };
+    scene.add(bhTargetMesh);
+    planetMeshes.blackhole = bhTargetMesh;
+    interactiveObjects.push(bhTargetMesh);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // PHASE 4 POLISH: ANIMATED COMET WITH PARTICLE TAIL
+    // ─────────────────────────────────────────────────────────────────────────
+    cometMesh = new THREE.Mesh(
+      trackResource(new THREE.SphereGeometry(0.3, 16, 16)),
+      trackResource(new THREE.MeshBasicMaterial({ color: 0xaaddff }))
+    );
+    scene.add(cometMesh);
 
     // 9. Interaction, Controls & Touch Support
     const raycaster = new THREE.Raycaster();
@@ -605,7 +800,34 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
         earthCloudsMesh.rotation.y += 0.08 * deltaTime;
       }
 
-      // Rotate Instanced Asteroids
+      // Toggle Earth Cutaway Mode View
+      const earthMesh = planetMeshes.earth;
+      if (earthMesh && earthCutawayGroup) {
+        const isCutawayActive = isCutawayOpenRef.current;
+        earthCutawayGroup.visible = isCutawayActive;
+        earthMesh.material.visible = !isCutawayActive;
+        if (earthCloudsMesh) earthCloudsMesh.visible = !isCutawayActive;
+        if (earthRayleighMesh) earthRayleighMesh.visible = !isCutawayActive;
+        if (isCutawayActive) {
+          earthCutawayGroup.rotation.y += 0.2 * deltaTime;
+        }
+      }
+
+      // Rotate Black Hole Accretion Disk
+      if (blackHoleAccretionRing) {
+        blackHoleAccretionRing.rotation.z += 0.4 * deltaTime;
+      }
+
+      // Animate Comet Trajectory
+      if (cometMesh) {
+        cometMesh.position.set(
+          Math.sin(time * 0.3) * 60,
+          Math.cos(time * 0.2) * 20,
+          Math.sin(time * 0.15) * 50
+        );
+      }
+
+      // Rotate Instanced Asteroids (Main Belt + Kuiper Belt)
       for (let i = 0; i < astCount; i++) {
         const item = asteroidData[i];
         item.angle += 0.02 * currentSpeed * deltaTime;
@@ -616,8 +838,20 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       }
       instancedAsteroids.instanceMatrix.needsUpdate = true;
 
-      // Rotate Galaxy
+      for (let i = 0; i < kuiperCount; i++) {
+        const item = kuiperList[i];
+        item.angle += 0.005 * currentSpeed * deltaTime;
+        dummy.position.set(Math.cos(item.angle) * item.radius, item.y, Math.sin(item.angle) * item.radius);
+        dummy.rotation.copy(item.rot);
+        dummy.updateMatrix();
+        instancedKuiper.setMatrixAt(i, dummy.matrix);
+      }
+      instancedKuiper.instanceMatrix.needsUpdate = true;
+
+      // Rotate Galaxies & Nebulae
       galaxyGroup.rotation.y += 0.008 * deltaTime;
+      androGroup.rotation.y += 0.006 * deltaTime;
+      nebulaGroup.rotation.y += 0.004 * deltaTime;
 
       // Orbit Planets & Extra Moons
       planetKeys.forEach(key => {
@@ -651,36 +885,27 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
         }
       }
 
-      if (currentSelectedKey && currentSelectedKey !== 'galaxy') {
+      if (currentSelectedKey && planetMeshes[currentSelectedKey]) {
         const targetMesh = planetMeshes[currentSelectedKey];
-        if (targetMesh) {
-          targetMesh.getWorldPosition(targetPos);
-          cameraFillLight.position.set(targetPos.x + 10, targetPos.y + 15, targetPos.z + 20);
-        }
-      } else if (currentSelectedKey === 'galaxy') {
-        targetPos.set(0, -30, -50);
+        targetMesh.getWorldPosition(targetPos);
+        cameraFillLight.position.set(targetPos.x + 10, targetPos.y + 15, targetPos.z + 20);
       }
 
-      // If user is manually scrolling/zooming, update target zoom to match user's input
       if (Math.abs(zoomVelocityRef.current) > 0.001) {
         targetZoomDistanceRef.current = zoomDistanceRef.current + zoomVelocityRef.current;
       }
 
-      // Smooth Zoom Lerp towards target distance
       zoomDistanceRef.current += (targetZoomDistanceRef.current - zoomDistanceRef.current) * 0.1;
 
-      // Apply Zoom Momentum and Clamp Bounds
       zoomDistanceRef.current = THREE.MathUtils.clamp(
         zoomDistanceRef.current + zoomVelocityRef.current,
         2.0,
-        150.0
+        250.0
       );
       zoomVelocityRef.current *= 0.88;
 
-      // Camera Target Lerp
       cameraTargetRef.current.lerp(targetPos, 0.08);
 
-      // Spherical Camera Position Calculation
       const dist = zoomDistanceRef.current;
       const theta = sphericalAngleRef.current.theta;
       const phi = sphericalAngleRef.current.phi;
@@ -720,7 +945,6 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       window.removeEventListener('click', handleClick);
       window.removeEventListener('resize', handleResize);
 
-      // Full GPU Resource Disposal
       disposableGeometries.forEach(g => g.dispose());
       disposableMaterials.forEach(m => m.dispose());
       disposableTextures.forEach(t => t.dispose());

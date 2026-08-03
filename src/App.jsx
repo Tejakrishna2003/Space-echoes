@@ -20,10 +20,14 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalData, setModalData] = useState(null);
   const [fps, setFps] = useState(60);
+  const [isCutawayOpen, setIsCutawayOpen] = useState(false);
 
   const handleSelectBody = useCallback((bodyKey) => {
     if (!SPACE_DATA[bodyKey]) return;
     setSelectedBodyKey(bodyKey);
+    if (bodyKey !== 'earth') {
+      setIsCutawayOpen(false);
+    }
     spaceAudioEngine.setBody(bodyKey);
     spaceAudioEngine.playChime(783.99, 0.35);
   }, []);
@@ -38,6 +42,7 @@ export default function App() {
     setSelectedBodyKey(prevKey => {
       const idx = keys.indexOf(prevKey);
       const nextKey = keys[(idx + 1) % keys.length];
+      if (nextKey !== 'earth') setIsCutawayOpen(false);
       spaceAudioEngine.setBody(nextKey);
       spaceAudioEngine.playChime(783.99, 0.35);
       return nextKey;
@@ -57,6 +62,11 @@ export default function App() {
     });
   }, []);
 
+  const handleToggleCutaway = useCallback(() => {
+    setIsCutawayOpen(prev => !prev);
+    spaceAudioEngine.playChime(1200, 0.4);
+  }, []);
+
   const handleEnter = useCallback(() => {
     setHasStarted(true);
     handleToggleAudio();
@@ -73,13 +83,14 @@ export default function App() {
     setIsModalOpen(false);
   }, []);
 
-  // Keyboard Shortcuts: M, Z, Esc, and 1-9 for direct planet jump
+  // Keyboard Shortcuts: M, Z, C (Cutaway), Esc, 1-9 & 0 for direct jump
   useEffect(() => {
-    const bodyKeysOrder = ['sun', 'mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'galaxy'];
+    const bodyKeysOrder = ['sun', 'mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'galaxy', 'kuiperbelt', 'nebula', 'andromeda', 'blackhole'];
 
     const handleKeyDown = (e) => {
       if (e.key.toLowerCase() === 'm') handleToggleAudio();
       if (e.key.toLowerCase() === 'z') handleToggleZen();
+      if (e.key.toLowerCase() === 'c') handleToggleCutaway();
       if (e.key === 'Escape') handleCloseModal();
 
       if (e.key >= '1' && e.key <= '9') {
@@ -92,7 +103,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleToggleAudio, handleToggleZen, handleCloseModal]);
+  }, [handleToggleAudio, handleToggleZen, handleToggleCutaway, handleCloseModal]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-surface-container-lowest text-on-surface select-none cursor-crosshair">
@@ -109,6 +120,7 @@ export default function App() {
         onPlanetClick={handleSelectBody}
         timeSpeed={timeSpeed}
         setFps={setFps}
+        isCutawayOpen={isCutawayOpen}
       />
 
       {/* Top Header HUD Navigation */}
@@ -119,6 +131,8 @@ export default function App() {
         onToggleAudio={handleToggleAudio}
         onToggleZen={handleToggleZen}
         onOpenCodex={handleOpenModal}
+        isCutawayOpen={isCutawayOpen}
+        onToggleCutaway={handleToggleCutaway}
       />
 
       {/* Right Side Planet Switcher Pips */}
@@ -131,6 +145,7 @@ export default function App() {
       <RealmInfoPanel
         selectedBodyKey={selectedBodyKey}
         fps={fps}
+        isCutawayOpen={isCutawayOpen}
       />
 
       {/* Right Orbit Speed Control Panel */}
@@ -149,37 +164,63 @@ export default function App() {
       >
         <button
           onClick={handleOpenModal}
-          className="flex flex-col items-center justify-center text-primary-fixed drop-shadow-[0_0_15px_rgba(0,225,171,0.5)] flicker-animation"
+          className="group flex flex-col items-center space-y-1 focus:outline-none"
         >
-          <span className="material-symbols-outlined text-2xl mb-1">public</span>
-          <span className="font-label-sm text-[10px] tracking-widest uppercase font-bold">PLANETARY LOG</span>
+          <div className="w-10 h-10 rounded-full border border-primary/30 flex items-center justify-center group-hover:border-primary group-hover:bg-primary/10 transition-all">
+            <span className="material-symbols-outlined text-primary text-xl">globe</span>
+          </div>
+          <span className="font-label-sm text-[10px] tracking-widest text-on-surface-variant group-hover:text-primary uppercase">
+            PLANETARY LOG
+          </span>
         </button>
 
         <button
           onClick={handleNextPlanet}
-          className="flex flex-col items-center justify-center text-on-surface-variant/50 hover:text-primary transition-colors duration-300"
+          className="group flex flex-col items-center space-y-1 focus:outline-none"
         >
-          <span className="material-symbols-outlined text-2xl mb-1">rocket_launch</span>
-          <span className="font-label-sm text-[10px] tracking-widest uppercase font-bold">WARP TO NEXT</span>
+          <div className="w-10 h-10 rounded-full border border-primary/30 flex items-center justify-center group-hover:border-primary group-hover:bg-primary/10 transition-all">
+            <span className="material-symbols-outlined text-primary text-xl">rocket_launch</span>
+          </div>
+          <span className="font-label-sm text-[10px] tracking-widest text-on-surface-variant group-hover:text-primary uppercase">
+            WARP TO NEXT
+          </span>
         </button>
 
+        {selectedBodyKey === 'earth' && (
+          <button
+            onClick={handleToggleCutaway}
+            className="group flex flex-col items-center space-y-1 focus:outline-none"
+          >
+            <div className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${isCutawayOpen ? 'border-amber-400 bg-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'border-primary/30 group-hover:border-primary group-hover:bg-primary/10'}`}>
+              <span className={`material-symbols-outlined text-xl ${isCutawayOpen ? 'text-amber-400' : 'text-primary'}`}>layers</span>
+            </div>
+            <span className={`font-label-sm text-[10px] tracking-widest uppercase ${isCutawayOpen ? 'text-amber-400 font-bold' : 'text-on-surface-variant group-hover:text-primary'}`}>
+              {isCutawayOpen ? 'SURFACE VIEW [C]' : '3D CUTAWAY [C]'}
+            </span>
+          </button>
+        )}
+
         <button
-          onClick={() => handleSelectBody('galaxy')}
-          className="flex flex-col items-center justify-center text-on-surface-variant/50 hover:text-primary transition-colors duration-300"
+          onClick={() => handleSelectBody('blackhole')}
+          className="group flex flex-col items-center space-y-1 focus:outline-none"
         >
-          <span className="material-symbols-outlined text-2xl mb-1">blur_on</span>
-          <span className="font-label-sm text-[10px] tracking-widest uppercase font-bold">SPIRAL GALAXY</span>
+          <div className="w-10 h-10 rounded-full border border-orange-500/40 flex items-center justify-center group-hover:border-orange-400 group-hover:bg-orange-500/20 transition-all">
+            <span className="material-symbols-outlined text-orange-400 text-xl">contrast</span>
+          </div>
+          <span className="font-label-sm text-[10px] tracking-widest text-orange-300 group-hover:text-orange-200 uppercase">
+            SINGULARITY
+          </span>
         </button>
       </footer>
 
-      {/* Planetary Codex Modal */}
+      {/* Codex Details Modal */}
       <CodexModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         bodyData={modalData}
       />
 
-      {/* Launch Into Space Splash Overlay */}
+      {/* Start Audio Prompt Overlay */}
       {!hasStarted && <StartOverlay onEnter={handleEnter} />}
     </div>
   );

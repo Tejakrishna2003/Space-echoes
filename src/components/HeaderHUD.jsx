@@ -7,7 +7,9 @@ export default function HeaderHUD({
   isAudioMuted,
   onToggleAudio,
   onToggleZen,
-  onOpenCodex
+  onOpenCodex,
+  isCutawayOpen,
+  onToggleCutaway
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -23,16 +25,16 @@ export default function HeaderHUD({
         </div>
 
         {/* Desktop Nav */}
-        <nav className="hidden xl:flex items-center space-x-md overflow-x-auto max-w-4xl py-1">
+        <nav className="hidden xl:flex items-center space-x-3 overflow-x-auto max-w-4xl py-1">
           {Object.values(SPACE_DATA).map(body => {
             const isActive = selectedBodyKey === body.key;
             return (
               <button
                 key={body.key}
                 onClick={() => onSelectBody(body.key)}
-                className={`font-label-sm text-[11px] tracking-[0.15em] uppercase transition-all duration-300 whitespace-nowrap ${
+                className={`font-label-sm text-[10px] tracking-[0.15em] uppercase transition-all duration-300 whitespace-nowrap px-1.5 py-0.5 rounded ${
                   isActive
-                    ? 'text-primary-fixed-dim drop-shadow-[0_0_8px_rgba(0,225,171,0.6)] font-bold underline underline-offset-4 decoration-primary-fixed-dim'
+                    ? 'text-primary-fixed-dim bg-white/10 drop-shadow-[0_0_8px_rgba(0,225,171,0.6)] font-bold border border-emerald-400/40'
                     : 'text-on-surface-variant/70 hover:text-primary-fixed hover:scale-105'
                 }`}
               >
@@ -44,6 +46,21 @@ export default function HeaderHUD({
 
         {/* Controls & Mobile Menu Toggle */}
         <div className="flex items-center space-x-2 sm:space-x-md text-primary">
+          {selectedBodyKey === 'earth' && (
+            <button
+              onClick={onToggleCutaway}
+              className={`px-2 py-1 rounded font-label-sm text-[10px] tracking-wider uppercase transition-all flex items-center space-x-1 border ${
+                isCutawayOpen
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.4)] font-bold'
+                  : 'bg-white/5 text-primary border-white/20 hover:bg-white/10'
+              }`}
+              title="Toggle 3D Earth Core Cutaway (C)"
+            >
+              <span className="material-symbols-outlined text-sm">layers</span>
+              <span>{isCutawayOpen ? 'SURFACE [C]' : 'CUTAWAY [C]'}</span>
+            </button>
+          )}
+
           <button
             onClick={onToggleAudio}
             className="flicker-animation p-1"
@@ -64,44 +81,47 @@ export default function HeaderHUD({
 
           <button
             onClick={onOpenCodex}
-            className="px-3 py-1.5 rounded border border-emerald-400/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-label-sm text-[10px] tracking-wider transition-all flex items-center space-x-1.5"
+            className="hidden sm:flex items-center space-x-2 px-md py-xs rounded bg-primary/10 border border-primary/40 hover:bg-primary/20 text-primary transition-all font-label-sm text-xs tracking-wider"
           >
-            <span className="material-symbols-outlined text-sm">travel_explore</span>
-            <span className="hidden sm:inline">CODEX</span>
+            <span className="material-symbols-outlined text-sm">menu_book</span>
+            <span>CODEX</span>
           </button>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="xl:hidden p-1 text-white"
+            className="xl:hidden p-1 text-primary focus:outline-none"
           >
-            <span className="material-symbols-outlined text-2xl">
+            <span className="material-symbols-outlined text-3xl">
               {isMobileMenuOpen ? 'close' : 'menu'}
             </span>
           </button>
         </div>
       </header>
 
-      {/* Mobile Drawer Navigation */}
+      {/* Mobile Drawer */}
       {isMobileMenuOpen && (
-        <div className="xl:hidden fixed top-16 inset-x-0 bg-black/95 backdrop-blur-2xl border-b border-white/10 z-40 p-4 animate-fadeIn">
-          <div className="grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto">
-            {Object.values(SPACE_DATA).map(body => (
-              <button
-                key={body.key}
-                onClick={() => {
-                  onSelectBody(body.key);
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`py-2 px-3 text-left font-label-sm text-xs tracking-wider rounded border ${
-                  selectedBodyKey === body.key
-                    ? 'border-emerald-400 text-emerald-300 bg-emerald-500/20'
-                    : 'border-white/10 text-gray-300 hover:bg-white/10'
-                }`}
-              >
-                {body.name}
-              </button>
-            ))}
+        <div className="fixed inset-0 z-40 bg-surface-container-lowest/90 backdrop-blur-xl xl:hidden pt-20 px-edge-margin pb-xl overflow-y-auto animate-fadeIn">
+          <div className="grid grid-cols-2 gap-md">
+            {Object.values(SPACE_DATA).map(body => {
+              const isActive = selectedBodyKey === body.key;
+              return (
+                <button
+                  key={body.key}
+                  onClick={() => {
+                    onSelectBody(body.key);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`p-md rounded border text-left font-label-sm text-xs tracking-widest uppercase transition-all ${
+                    isActive
+                      ? 'border-primary bg-primary/20 text-primary font-bold shadow-[0_0_15px_rgba(0,225,171,0.3)]'
+                      : 'border-white/10 bg-white/5 text-on-surface-variant hover:border-white/30'
+                  }`}
+                >
+                  <div className="text-[10px] text-gray-400">{body.category}</div>
+                  <div className="text-sm font-bold text-primary mt-1">{body.name}</div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
