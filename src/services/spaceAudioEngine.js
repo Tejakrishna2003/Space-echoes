@@ -29,7 +29,8 @@ class SpaceAudioEngine {
       kuiperbelt: { base: 80.0, chord: 120.0, sub: 40.0, filter: 350 },
       andromeda: { base: 200.0, chord: 300.0, sub: 100.0, filter: 1600 },
       blackhole: { base: 40.0, chord: 60.0, sub: 20.0, filter: 200 },
-      nebula: { base: 180.0, chord: 270.0, sub: 90.0, filter: 1400 }
+      nebula: { base: 180.0, chord: 270.0, sub: 90.0, filter: 1400 },
+      pluto: { base: 90.0, chord: 135.0, sub: 45.0, filter: 400 }
     };
 
     this.currentBody = 'earth';

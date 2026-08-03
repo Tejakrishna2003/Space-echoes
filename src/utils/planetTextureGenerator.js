@@ -666,8 +666,40 @@ export function getBlackHoleAccretionTexture() {
 
       ctx.fillStyle = accGrad;
       ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
-      ctx.fillRect(x, 0, 1, h);
     }
     ctx.globalAlpha = 1;
   });
 }
+
+export function getPlutoTexture() {
+  return createNoiseCanvas('pluto_2048', 2048, 1024, (ctx, w, h) => {
+    // Reddish-tan & Charcoal Icy Terrain Base
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, '#5a463a');
+    grad.addColorStop(0.5, '#c29b7f');
+    grad.addColorStop(1, '#3d2e25');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Dark Craters & Dark Tholin Organic Macromolecules Spots
+    ctx.fillStyle = 'rgba(40, 20, 15, 0.6)';
+    for (let i = 0; i < 200; i++) {
+      ctx.beginPath();
+      ctx.ellipse(Math.random() * w, Math.random() * h, Math.random() * 80 + 20, Math.random() * 50 + 15, Math.random() * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Iconic Tombaugh Regio "Heart-shaped" Nitrogen Glacier (Central Bright Feature)
+    const hx = w * 0.45;
+    const hy = h * 0.52;
+    const heartGrad = ctx.createRadialGradient(hx, hy, 10, hx, hy, 160);
+    heartGrad.addColorStop(0, '#f8fafc');
+    heartGrad.addColorStop(0.6, '#e2e8f0');
+    heartGrad.addColorStop(1, 'rgba(194, 155, 127, 0)');
+    ctx.fillStyle = heartGrad;
+    ctx.beginPath();
+    ctx.ellipse(hx, hy, 160, 110, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+

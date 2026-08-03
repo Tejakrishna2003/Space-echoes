@@ -188,13 +188,18 @@ export const SPACE_DATA = {
     hasRings: true,
     ringInner: 1.8,
     ringOuter: 3.2,
+    extraMoons: [
+      { name: 'Titan', radius: 2.5, speed: 0.03, size: 0.15, color: '#d4a36a' },
+      { name: 'Enceladus', radius: 1.9, speed: 0.05, size: 0.08, color: '#f0f4f8' },
+      { name: 'Rhea', radius: 3.2, speed: 0.02, size: 0.10, color: '#b0b0b8' }
+    ],
     distance: '9.58 AU',
     diameter: '116,460 km',
     temp: '-140 °C',
     gravity: '10.44 m/s²',
     dayLength: '10.7 Hours',
     composition: '96% Hydrogen, 3% Helium, Ice Rings',
-    moons: '146 (Titan, Enceladus...)',
+    moons: '146 (Titan, Enceladus, Rhea...)',
     desc: 'Adorned with spectacular 3D rings of water ice and rock fragments, Saturn is the jewel of the Solar System.',
     lore: 'Saturn’s density is so low that if there were a bathtub large enough, the entire planet would float on water.'
   },
@@ -283,6 +288,29 @@ export const SPACE_DATA = {
     moons: 'Pluto, Eris, Haumea, Makemake',
     desc: 'A vast circumstellar disc of icy bodies, dwarf planets, and cometary reservoirs encasing the outer Solar System.',
     lore: 'The Oort Cloud is a spherical boundary shell extending halfway to the nearest star, holding trillions of icy cometary nuclei.'
+  },
+  pluto: {
+    key: 'pluto',
+    name: 'Pluto (Dwarf Planet)',
+    category: 'Dwarf Planet // Trans-Neptunian',
+    size: 0.22,
+    orbitRadius: 62.0,
+    orbitSpeed: 0.001,
+    tilt: 122.5,
+    colorHex: '#c29b7f',
+    emissiveHex: '#2b1d14',
+    extraMoons: [
+      { name: 'Charon', radius: 0.7, speed: 0.04, size: 0.09, color: '#888888' }
+    ],
+    distance: '39.5 AU',
+    diameter: '2,376 km',
+    temp: '-230 °C',
+    gravity: '0.62 m/s²',
+    dayLength: '6.4 Earth Days',
+    composition: '70% Rock, 30% Water Ice & Frozen Methane',
+    moons: '5 (Charon, Styx, Nix, Kerberos, Hydra)',
+    desc: 'A famous icy dwarf planet in the Kuiper Belt with a heart-shaped nitrogen ice glacier named Tombaugh Regio.',
+    lore: 'Reclassified as a dwarf planet in 2006 by the IAU, Pluto and its giant moon Charon orbit a shared center of mass outside Pluto itself.'
   },
   andromeda: {
     key: 'andromeda',
