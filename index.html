@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ECHOES BEYOND — React 3D Experience</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Geist:wght@300;400;600&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+    <!-- Tailwind CDN with Exact Custom Config -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-lowest": "#0c0e12",
+              "surface-container-low": "#1a1c20",
+              "surface-container": "#1e2024",
+              "surface-container-high": "#282a2e",
+              "surface-container-highest": "#333539",
+              "primary": "#fbfffa",
+              "primary-fixed": "#36ffc4",
+              "primary-fixed-dim": "#00e1ab",
+              "secondary": "#fff9ef",
+              "secondary-container": "#ffdb3c",
+              "tertiary": "#fcfeff",
+              "tertiary-fixed-dim": "#00daf8",
+              "on-surface": "#e2e2e8",
+              "on-surface-variant": "#b9cbc1",
+              "outline": "#83958c",
+              "outline-variant": "#3a4a43"
+            },
+            spacing: {
+              "edge-margin": "40px",
+              "hud-gutter": "24px",
+              "unit": "4px",
+              "xs": "4px",
+              "sm": "12px",
+              "md": "24px",
+              "lg": "48px",
+              "xl": "80px"
+            },
+            fontFamily: {
+              "display-xl": ["EB Garamond", "serif"],
+              "label-sm": ["Space Mono", "monospace"],
+              "ui-nav": ["Geist", "sans-serif"],
+              "headline-lg": ["EB Garamond", "serif"],
+              "body-md": ["Geist", "sans-serif"]
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body class="bg-surface-container-lowest text-on-surface overflow-hidden select-none cursor-crosshair">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
