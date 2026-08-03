@@ -149,7 +149,15 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       skydomePos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       skydomePos[i * 3 + 2] = r * Math.cos(phi);
 
-      const col = new THREE.Color().setHSL(0.55 + Math.random() * 0.1, 0.7, 0.7 + Math.random() * 0.3);
+      const starType = Math.random();
+      const col = new THREE.Color();
+      if (starType < 0.60) {
+        col.setHSL(0.11 + Math.random() * 0.04, 0.7, 0.75 + Math.random() * 0.2); // Warm yellow-white
+      } else if (starType < 0.85) {
+        col.setHSL(0.58 + Math.random() * 0.08, 0.8, 0.8 + Math.random() * 0.2);  // Cool blue-white
+      } else {
+        col.setHSL(0.02 + Math.random() * 0.03, 0.9, 0.65 + Math.random() * 0.2); // Red Giant
+      }
       skydomeColors[i * 3] = col.r;
       skydomeColors[i * 3 + 1] = col.g;
       skydomeColors[i * 3 + 2] = col.b;
@@ -397,6 +405,27 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
         });
       }
 
+      // Atmospheric Rim Glow for Gas Giants & Venus
+      if (['venus', 'jupiter', 'saturn', 'uranus', 'neptune'].includes(key)) {
+        const rimColor = key === 'venus' ? 0xffdd66
+                       : key === 'jupiter' ? 0xffaa55
+                       : key === 'saturn' ? 0xffe099
+                       : key === 'uranus' ? 0x60efff
+                       : 0x4488ff;
+        const rimGlowMesh = new THREE.Mesh(
+          trackResource(new THREE.SphereGeometry(pData.size * 1.04, 32, 32)),
+          trackResource(new THREE.MeshBasicMaterial({
+            color: rimColor,
+            transparent: true,
+            opacity: key === 'venus' ? 0.28 : 0.22,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            side: THREE.BackSide
+          }))
+        );
+        pMesh.add(rimGlowMesh);
+      }
+
       // Saturn & Uranus Rings
       if (pData.hasRings) {
         const ringMesh = new THREE.Mesh(
@@ -410,7 +439,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
             roughness: 0.3
           }))
         );
-        ringMesh.rotation.x = Math.PI / 2.3;
+        ringMesh.rotation.x = Math.PI / 2;
         pMesh.add(ringMesh);
       }
     });
@@ -687,6 +716,34 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     blackHoleAccretionRing.rotation.x = Math.PI / 2.2;
     bhGroup.add(blackHoleAccretionRing);
 
+    // Gravitational Lensing Light Distortion Photon Ring Shell
+    const gravitationalLensMesh = new THREE.Mesh(
+      trackResource(new THREE.SphereGeometry(bhData.size * 1.28, 32, 32)),
+      trackResource(new THREE.ShaderMaterial({
+        uniforms: { color: { value: new THREE.Color(0xff8800) } },
+        vertexShader: `
+          varying vec3 vNormal;
+          void main() {
+            vNormal = normalize(normalMatrix * normal);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 color;
+          varying vec3 vNormal;
+          void main() {
+            float rim = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 2.2);
+            gl_FragColor = vec4(color, rim * 0.75);
+          }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.BackSide
+      }))
+    );
+    bhGroup.add(gravitationalLensMesh);
+
     const bhTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(5.0, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
     bhTargetMesh.position.copy(bhGroup.position);
     bhTargetMesh.userData = { key: 'blackhole', data: bhData };
@@ -695,13 +752,30 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     interactiveObjects.push(bhTargetMesh);
 
     // ─────────────────────────────────────────────────────────────────────────
-    // PHASE 4 POLISH: ANIMATED COMET WITH PARTICLE TAIL
+    // PHASE 4 POLISH: ANIMATED COMET WITH DYNAMIC TAIL
     // ─────────────────────────────────────────────────────────────────────────
     cometMesh = new THREE.Mesh(
-      trackResource(new THREE.SphereGeometry(0.3, 16, 16)),
-      trackResource(new THREE.MeshBasicMaterial({ color: 0xaaddff }))
+      trackResource(new THREE.SphereGeometry(0.35, 16, 16)),
+      trackResource(new THREE.MeshBasicMaterial({ color: 0xe0f2fe }))
     );
     scene.add(cometMesh);
+
+    const cometTailCount = 100;
+    const cometTailGeo = trackResource(new THREE.BufferGeometry());
+    const cometTailPos = new Float32Array(cometTailCount * 3);
+    cometTailGeo.setAttribute('position', new THREE.BufferAttribute(cometTailPos, 3));
+    const cometTailParticles = new THREE.Points(
+      cometTailGeo,
+      trackResource(new THREE.PointsMaterial({
+        size: 0.7,
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.65,
+        blending: THREE.AdditiveBlending
+      }))
+    );
+    scene.add(cometTailParticles);
+    const cometHistory = [];
 
     // 9. Interaction, Controls & Touch Support
     const raycaster = new THREE.Raycaster();
@@ -835,6 +909,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     let prevFrameTime = performance.now();
     let animId;
     let prevSelectedKey = null;
+    const targetPosVec = new THREE.Vector3();
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
@@ -853,8 +928,9 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
         lastTime = now;
       }
 
-      // Rotate Sun Core & Prominences
+      // Rotate Sun Core & Prominences + Solar Breathing Pulse
       sunMesh.rotation.y += 0.05 * deltaTime;
+      sunMesh.scale.setScalar(1.0 + Math.sin(time * 1.5) * 0.012);
       if (solarProminenceGroup) {
         solarProminenceGroup.rotation.z += 0.1 * deltaTime;
         solarProminenceGroup.rotation.x += 0.05 * deltaTime;
@@ -883,13 +959,23 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
         blackHoleAccretionRing.rotation.z += 0.4 * deltaTime;
       }
 
-      // Animate Comet Trajectory
+      // Animate Comet Trajectory & Particle Tail
       if (cometMesh) {
-        cometMesh.position.set(
-          Math.sin(time * 0.3) * 60,
-          Math.cos(time * 0.2) * 20,
-          Math.sin(time * 0.15) * 50
-        );
+        const cx = Math.sin(time * 0.3) * 60;
+        const cy = Math.cos(time * 0.2) * 20;
+        const cz = Math.sin(time * 0.15) * 50;
+        cometMesh.position.set(cx, cy, cz);
+
+        cometHistory.unshift({ x: cx, y: cy, z: cz });
+        if (cometHistory.length > cometTailCount) cometHistory.pop();
+
+        const tailPositions = cometTailGeo.attributes.position.array;
+        for (let i = 0; i < cometHistory.length; i++) {
+          tailPositions[i * 3] = cometHistory[i].x;
+          tailPositions[i * 3 + 1] = cometHistory[i].y;
+          tailPositions[i * 3 + 2] = cometHistory[i].z;
+        }
+        cometTailGeo.attributes.position.needsUpdate = true;
       }
 
       // Rotate Instanced Asteroids (Main Belt + Kuiper Belt)
@@ -903,15 +989,18 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       }
       instancedAsteroids.instanceMatrix.needsUpdate = true;
 
-      for (let i = 0; i < kuiperCount; i++) {
-        const item = kuiperList[i];
-        item.angle += 0.005 * currentSpeed * deltaTime;
-        dummy.position.set(Math.cos(item.angle) * item.radius, item.y, Math.sin(item.angle) * item.radius);
-        dummy.rotation.copy(item.rot);
-        dummy.updateMatrix();
-        instancedKuiper.setMatrixAt(i, dummy.matrix);
+      // Kuiper Belt Zone Culling Performance Optimization
+      if (zoomDistanceRef.current > 35.0 || selectedBodyKeyRef.current === 'kuiperbelt') {
+        for (let i = 0; i < kuiperCount; i++) {
+          const item = kuiperList[i];
+          item.angle += 0.005 * currentSpeed * deltaTime;
+          dummy.position.set(Math.cos(item.angle) * item.radius, item.y, Math.sin(item.angle) * item.radius);
+          dummy.rotation.copy(item.rot);
+          dummy.updateMatrix();
+          instancedKuiper.setMatrixAt(i, dummy.matrix);
+        }
+        instancedKuiper.instanceMatrix.needsUpdate = true;
       }
-      instancedKuiper.instanceMatrix.needsUpdate = true;
 
       // Rotate Galaxies & Nebulae
       galaxyGroup.rotation.y += 0.008 * deltaTime;
@@ -939,7 +1028,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       });
 
       // Target Focus & Auto-Zoom Calculation
-      const targetPos = new THREE.Vector3(0, 0, 0);
+      targetPosVec.set(0, 0, 0);
       const currentSelectedKey = selectedBodyKeyRef.current;
 
       if (currentSelectedKey !== prevSelectedKey) {
@@ -955,12 +1044,12 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       }
 
       if (currentSelectedKey === 'solarsystem') {
-        targetPos.set(0, 0, 0);
+        targetPosVec.set(0, 0, 0);
         cameraFillLight.position.set(10, 20, 20);
       } else if (currentSelectedKey && planetMeshes[currentSelectedKey]) {
         const targetMesh = planetMeshes[currentSelectedKey];
-        targetMesh.getWorldPosition(targetPos);
-        cameraFillLight.position.set(targetPos.x + 10, targetPos.y + 15, targetPos.z + 20);
+        targetMesh.getWorldPosition(targetPosVec);
+        cameraFillLight.position.set(targetPosVec.x + 10, targetPosVec.y + 15, targetPosVec.z + 20);
       }
 
       if (Math.abs(zoomVelocityRef.current) > 0.001) {
@@ -976,7 +1065,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       );
       zoomVelocityRef.current *= 0.88;
 
-      cameraTargetRef.current.lerp(targetPos, 0.08);
+      cameraTargetRef.current.lerp(targetPosVec, 0.08);
 
       const dist = zoomDistanceRef.current;
       const theta = sphericalAngleRef.current.theta;
