@@ -185,10 +185,10 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     }
     dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
     scene.add(new THREE.Points(dustGeo, trackResource(new THREE.PointsMaterial({
-      size: 0.8,
+      size: 0.4,
       color: 0x38bdf8,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.25,
       blending: THREE.AdditiveBlending
     }))));
 
@@ -474,37 +474,35 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     // ─────────────────────────────────────────────────────────────────────────
     const kuiperData = SPACE_DATA.kuiperbelt;
 
-    // Glowing Circumstellar Icy Disc Ring Haze
+    // Delicate Circumstellar Kuiper Belt Trajectory Ring
     const kuiperRingMesh = new THREE.Mesh(
-      trackResource(new THREE.RingGeometry(60.0, 74.0, 128)),
+      trackResource(new THREE.RingGeometry(62.0 - 0.05, 62.0 + 0.05, 128)),
       trackResource(new THREE.MeshBasicMaterial({
         color: 0x38bdf8,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.25,
-        blending: THREE.AdditiveBlending,
+        opacity: 0.2,
         depthWrite: false
       }))
     );
     kuiperRingMesh.rotation.x = Math.PI / 2;
     scene.add(kuiperRingMesh);
 
-    // 3,000 Large Icy Asteroids
-    const kuiperCount = 3000;
-    const kuiperGeo = trackResource(new THREE.DodecahedronGeometry(0.28, 0));
+    // Natural Icy Asteroids
+    const kuiperCount = 1600;
+    const kuiperGeo = trackResource(new THREE.DodecahedronGeometry(0.12, 0));
     const kuiperMat = trackResource(new THREE.MeshStandardMaterial({
-      color: 0x7dd3fc,
-      emissive: 0x0284c7,
-      emissiveIntensity: 0.3,
-      roughness: 0.3
+      color: 0x94a3b8,
+      roughness: 0.6,
+      metalness: 0.1
     }));
     const instancedKuiper = new THREE.InstancedMesh(kuiperGeo, kuiperMat, kuiperCount);
 
     const kuiperList = [];
     for (let i = 0; i < kuiperCount; i++) {
-      const radius = 61.0 + Math.random() * 12.0;
+      const radius = 60.0 + Math.random() * 10.0;
       const angle = Math.random() * Math.PI * 2;
-      const y = (Math.random() - 0.5) * 3.5;
+      const y = (Math.random() - 0.5) * 2.5;
       const rot = new THREE.Euler(Math.random(), Math.random(), Math.random());
 
       kuiperList.push({ radius, angle, y, rot });
@@ -516,8 +514,8 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     instancedKuiper.instanceMatrix.needsUpdate = true;
     scene.add(instancedKuiper);
 
-    // Oort Cloud Diffuse Spherical Shell (Bright Glowing Particles)
-    const oortCount = 3500;
+    // Oort Cloud Diffuse Spherical Shell (Subtle Cometary Particles)
+    const oortCount = 3000;
     const oortGeo = trackResource(new THREE.BufferGeometry());
     const oortPos = new Float32Array(oortCount * 3);
     for (let i = 0; i < oortCount; i++) {
@@ -533,11 +531,10 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     }
     oortGeo.setAttribute('position', new THREE.BufferAttribute(oortPos, 3));
     scene.add(new THREE.Points(oortGeo, trackResource(new THREE.PointsMaterial({
-      size: 2.2,
+      size: 1.1,
       color: 0x93c5fd,
       transparent: true,
-      opacity: 0.6,
-      blending: THREE.AdditiveBlending
+      opacity: 0.35
     }))));
 
     // Register Kuiper Belt Pivot for target camera navigation
