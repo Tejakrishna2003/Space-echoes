@@ -15,15 +15,21 @@ class SpaceAudioEngine {
 
     this.bodyFreqs = {
       sun: { base: 110.0, chord: 164.81, sub: 55.0, filter: 800 },
+      solarsystem: { base: 55.0, chord: 82.41, sub: 27.5, filter: 600 },
       mercury: { base: 146.83, chord: 220.00, sub: 73.4, filter: 600 },
       venus: { base: 130.81, chord: 196.00, sub: 65.4, filter: 500 },
       earth: { base: 174.61, chord: 261.63, sub: 87.3, filter: 1000 },
+      moon: { base: 155.56, chord: 233.08, sub: 77.8, filter: 700 },
       mars: { base: 98.00, chord: 146.83, sub: 49.0, filter: 450 },
       jupiter: { base: 65.41, chord: 98.00, sub: 32.7, filter: 350 },
       saturn: { base: 82.41, chord: 123.47, sub: 41.2, filter: 400 },
       uranus: { base: 123.47, chord: 185.00, sub: 61.7, filter: 900 },
       neptune: { base: 116.54, chord: 174.61, sub: 58.2, filter: 1100 },
-      galaxy: { base: 220.00, chord: 329.63, sub: 110.0, filter: 1800 }
+      galaxy: { base: 220.00, chord: 329.63, sub: 110.0, filter: 1800 },
+      kuiperbelt: { base: 80.0, chord: 120.0, sub: 40.0, filter: 350 },
+      andromeda: { base: 200.0, chord: 300.0, sub: 100.0, filter: 1600 },
+      blackhole: { base: 40.0, chord: 60.0, sub: 20.0, filter: 200 },
+      nebula: { base: 180.0, chord: 270.0, sub: 90.0, filter: 1400 }
     };
 
     this.currentBody = 'earth';

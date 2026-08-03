@@ -275,7 +275,7 @@ export const SPACE_DATA = {
     colorHex: '#38bdf8',
     emissiveHex: '#0369a1',
     distance: '30 - 50 AU (Kuiper) / 2,000+ AU (Oort)',
-    diameter: ' billions of km',
+    diameter: '4.7 Billion km',
     temp: '-230 °C',
     gravity: 'Cometary Gravitational Ring',
     dayLength: '248+ Earth Years',

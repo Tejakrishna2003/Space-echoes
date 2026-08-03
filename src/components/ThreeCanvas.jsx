@@ -489,8 +489,9 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     }))));
 
     // Register Kuiper Belt Pivot for target camera navigation
-    const kuiperMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(kuiperData.size, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
-    kuiperMesh.position.set(0, 0, 46.0);
+    // Target hit meshes for deep space objects (using tight precise core sizes to prevent background raycast hijacking)
+    const kuiperMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(6.0, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
+    kuiperMesh.position.set(0, 0, 65.0);
     kuiperMesh.userData = { key: 'kuiperbelt', data: kuiperData };
     scene.add(kuiperMesh);
     planetMeshes.kuiperbelt = kuiperMesh;
@@ -558,7 +559,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       blending: THREE.AdditiveBlending
     }))));
 
-    const galaxyTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(SPACE_DATA.galaxy.size, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
+    const galaxyTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(6.0, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
     galaxyTargetMesh.position.copy(galaxyGroup.position);
     galaxyTargetMesh.userData = { key: 'galaxy', data: SPACE_DATA.galaxy };
     scene.add(galaxyTargetMesh);
@@ -603,7 +604,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       blending: THREE.AdditiveBlending
     }))));
 
-    const nebulaTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(nebulaData.size, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
+    const nebulaTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(6.0, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
     nebulaTargetMesh.position.copy(nebulaGroup.position);
     nebulaTargetMesh.userData = { key: 'nebula', data: nebulaData };
     scene.add(nebulaTargetMesh);
@@ -650,7 +651,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       blending: THREE.AdditiveBlending
     }))));
 
-    const androTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(androData.size, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
+    const androTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(6.0, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
     androTargetMesh.position.copy(androGroup.position);
     androTargetMesh.userData = { key: 'andromeda', data: androData };
     scene.add(androTargetMesh);
@@ -686,7 +687,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     blackHoleAccretionRing.rotation.x = Math.PI / 2.2;
     bhGroup.add(blackHoleAccretionRing);
 
-    const bhTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(bhData.size * 3.0, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
+    const bhTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(5.0, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
     bhTargetMesh.position.copy(bhGroup.position);
     bhTargetMesh.userData = { key: 'blackhole', data: bhData };
     scene.add(bhTargetMesh);
@@ -708,12 +709,14 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
 
     let isDragging = false;
     let previousMousePosition = { x: 0, y: 0 };
+    let pointerDownPosition = { x: 0, y: 0 };
     let initialPinchDistance = 0;
 
     const handlePointerDown = (e) => {
       if (e.target.tagName === 'CANVAS') {
         isDragging = true;
         previousMousePosition = { x: e.clientX, y: e.clientY };
+        pointerDownPosition = { x: e.clientX, y: e.clientY };
       }
     };
 
@@ -761,6 +764,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       if (e.touches.length === 1) {
         isDragging = true;
         previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        pointerDownPosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       } else if (e.touches.length === 2) {
         isDragging = false;
         initialPinchDistance = Math.hypot(
@@ -801,6 +805,11 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
 
     const handleClick = (e) => {
       if (e.target.tagName !== 'CANVAS') return;
+      
+      // Ignore click event if user was dragging/rotating/zooming the camera (>6px move)
+      const moveDistance = Math.hypot(e.clientX - pointerDownPosition.x, e.clientY - pointerDownPosition.y);
+      if (moveDistance > 6) return;
+
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(interactiveObjects, true);
       if (intersects.length > 0) {
