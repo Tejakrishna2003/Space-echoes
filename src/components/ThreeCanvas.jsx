@@ -415,7 +415,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       }
     });
 
-    // 7. Instanced Asteroid Belt
+    // 7. Instanced Asteroid Belt (Between Mars 14.5 and Jupiter 26.0)
     const astCount = 1500;
     const astGeo = trackResource(new THREE.DodecahedronGeometry(0.08, 0));
     const astMat = trackResource(new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.7 }));
@@ -425,7 +425,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     const asteroidData = [];
 
     for (let i = 0; i < astCount; i++) {
-      const radius = 16.0 + Math.random() * 2.5;
+      const radius = 18.5 + Math.random() * 3.0;
       const angle = Math.random() * Math.PI * 2;
       const y = (Math.random() - 0.5) * 0.8;
       const rot = new THREE.Euler(Math.random(), Math.random(), Math.random());
@@ -451,7 +451,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
 
     const kuiperList = [];
     for (let i = 0; i < kuiperCount; i++) {
-      const radius = 42.0 + Math.random() * 8.0;
+      const radius = 62.0 + Math.random() * 10.0;
       const angle = Math.random() * Math.PI * 2;
       const y = (Math.random() - 0.5) * 3.5;
       const rot = new THREE.Euler(Math.random(), Math.random(), Math.random());
