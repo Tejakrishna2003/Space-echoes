@@ -937,11 +937,18 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
         prevSelectedKey = currentSelectedKey;
         const targetData = SPACE_DATA[currentSelectedKey];
         if (targetData) {
-          targetZoomDistanceRef.current = targetData.size ? Math.max(3.5, targetData.size * 6.0) : 35;
+          if (currentSelectedKey === 'solarsystem') {
+            targetZoomDistanceRef.current = 65.0;
+          } else {
+            targetZoomDistanceRef.current = targetData.size ? Math.max(3.5, targetData.size * 6.0) : 35;
+          }
         }
       }
 
-      if (currentSelectedKey && planetMeshes[currentSelectedKey]) {
+      if (currentSelectedKey === 'solarsystem') {
+        targetPos.set(0, 0, 0);
+        cameraFillLight.position.set(10, 20, 20);
+      } else if (currentSelectedKey && planetMeshes[currentSelectedKey]) {
         const targetMesh = planetMeshes[currentSelectedKey];
         targetMesh.getWorldPosition(targetPos);
         cameraFillLight.position.set(targetPos.x + 10, targetPos.y + 15, targetPos.z + 20);

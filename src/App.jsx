@@ -85,7 +85,7 @@ export default function App() {
 
   // Keyboard Shortcuts: M, Z, C (Cutaway), Esc, 1-9 & 0 for direct jump
   useEffect(() => {
-    const bodyKeysOrder = ['sun', 'mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'galaxy', 'kuiperbelt', 'nebula', 'andromeda', 'blackhole'];
+    const bodyKeysOrder = ['sun', 'solarsystem', 'mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'galaxy', 'kuiperbelt', 'nebula', 'andromeda', 'blackhole'];
 
     const handleKeyDown = (e) => {
       if (e.key.toLowerCase() === 'm') handleToggleAudio();

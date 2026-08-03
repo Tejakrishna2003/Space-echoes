@@ -19,6 +19,26 @@ export const SPACE_DATA = {
     desc: 'The central gravitational anchor of our solar system, powering life with radiant thermonuclear fusion.',
     lore: 'Emitting 3.8 x 10^26 Watts of energy, the Sun rotates once every 27 days at its equator while driving solar winds across deep space.'
   },
+  solarsystem: {
+    key: 'solarsystem',
+    name: 'Solar System',
+    category: 'Star System // Planetary Realm',
+    size: 55.0,
+    orbitRadius: 0,
+    orbitSpeed: 0,
+    tilt: 0,
+    colorHex: '#38bdf8',
+    emissiveHex: '#0284c7',
+    distance: '0 to 50 AU',
+    diameter: '287.46 Billion km',
+    temp: 'Varied (Sun to Kuiper)',
+    gravity: 'Heliosphere System',
+    dayLength: '230 Million Years (Galactic Orbit)',
+    composition: '1 G-type Star, 8 Planets, Asteroid & Kuiper Belts',
+    moons: '290+ Known Moons',
+    desc: 'Our home planetary system, bound by the Sun’s gravitational pull, housing 8 major planets, dwarf planets, asteroid belts, and icy outer realms.',
+    lore: 'Formed 4.6 billion years ago from the gravitational collapse of a giant interstellar molecular cloud, spanning across 50 Astronomical Units.'
+  },
   mercury: {
     key: 'mercury',
     name: 'Mercury',
