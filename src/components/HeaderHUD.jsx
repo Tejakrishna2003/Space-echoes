@@ -9,7 +9,10 @@ export default function HeaderHUD({
   onToggleZen,
   onOpenCodex,
   isCutawayOpen,
-  onToggleCutaway
+  onToggleCutaway,
+  onOpenHelp,
+  isConstellationsOpen,
+  onToggleConstellations
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -46,6 +49,19 @@ export default function HeaderHUD({
 
         {/* Controls & Mobile Menu Toggle */}
         <div className="flex items-center space-x-2 sm:space-x-md text-primary">
+          <button
+            onClick={onToggleConstellations}
+            className={`px-2 py-1 rounded font-label-sm text-[10px] tracking-wider uppercase transition-all flex items-center space-x-1 border ${
+              isConstellationsOpen
+                ? 'bg-sky-500/20 text-sky-300 border-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.4)] font-bold'
+                : 'bg-white/5 text-primary border-white/20 hover:bg-white/10'
+            }`}
+            title="Toggle 3D Constellation Overlay (K)"
+          >
+            <span className="material-symbols-outlined text-sm">auto_awesome</span>
+            <span>{isConstellationsOpen ? 'STARLINES [K]' : 'CONSTELLATIONS [K]'}</span>
+          </button>
+
           {['sun', 'mercury', 'venus', 'earth', 'moon', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'].includes(selectedBodyKey) && (
             <button
               onClick={onToggleCutaway}
@@ -77,6 +93,14 @@ export default function HeaderHUD({
             title="Toggle Zen Mode (Z)"
           >
             <span className="material-symbols-outlined text-2xl">settings</span>
+          </button>
+
+          <button
+            onClick={onOpenHelp}
+            className="flicker-animation p-1 text-emerald-400 hover:text-emerald-300"
+            title="Keyboard Shortcuts & Help (?)"
+          >
+            <span className="material-symbols-outlined text-2xl">help_outline</span>
           </button>
 
           <button

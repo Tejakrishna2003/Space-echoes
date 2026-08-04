@@ -13,18 +13,28 @@ import {
   getEarthNightTexture,
   getEarthCloudTexture,
   getMercuryTexture,
+  getMercuryBumpMap,
+  getMercurySpecularMap,
   getMarsTexture,
+  getMarsBumpMap,
+  getMarsDustStormTexture,
   getJupiterTexture,
+  getJupiterCloudTexture,
   getSaturnTexture,
+  getSaturnCloudTexture,
   getSaturnRingTexture,
   getMoonTexture,
+  getMoonBumpMap,
+  getMoonSpecularMap,
   getVenusTexture,
   getIceGiantTexture,
+  getUranusCloudTexture,
+  getNeptuneCloudTexture,
   getBlackHoleAccretionTexture,
   getPlutoTexture
 } from '../utils/planetTextureGenerator';
 
-export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed, setFps, isCutawayOpen }) {
+export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed, setFps, isCutawayOpen, hasStarted, setRenderStats, isConstellationsOpen }) {
   const mountRef = useRef(null);
   const tooltipRef = useRef(null);
 
@@ -32,6 +42,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
   const selectedBodyKeyRef = useRef(selectedBodyKey);
   const timeSpeedRef = useRef(timeSpeed);
   const isCutawayOpenRef = useRef(isCutawayOpen);
+  const isConstellationsOpenRef = useRef(isConstellationsOpen);
 
   useEffect(() => {
     selectedBodyKeyRef.current = selectedBodyKey;
@@ -44,6 +55,20 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
   useEffect(() => {
     isCutawayOpenRef.current = isCutawayOpen;
   }, [isCutawayOpen]);
+
+  useEffect(() => {
+    isConstellationsOpenRef.current = isConstellationsOpen;
+  }, [isConstellationsOpen]);
+
+  // Cinematic Intro Fly-In Trigger
+  const prevHasStartedRef = useRef(hasStarted);
+  useEffect(() => {
+    if (hasStarted && !prevHasStartedRef.current) {
+      zoomDistanceRef.current = 140.0;
+      targetZoomDistanceRef.current = 35.0;
+    }
+    prevHasStartedRef.current = hasStarted;
+  }, [hasStarted]);
 
   // Smooth Orbit & Zoom State
   const zoomDistanceRef = useRef(35);
@@ -118,6 +143,28 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     let cometMesh = null;
     let cometComaMesh = null;
     let venusCloudsMesh = null;
+    let jupiterCloudsMesh = null;
+    let saturnCloudsMesh = null;
+    let uranusCloudsMesh = null;
+    let neptuneCloudsMesh = null;
+    let marsDustMesh = null;
+    let earthAuroraNorthMesh = null;
+    let earthAuroraSouthMesh = null;
+    let jupiterCloudsEastMesh = null;
+    let jupiterCloudsWestMesh = null;
+    let venusLightningLight = null;
+    let sunFlareParticles = null;
+    let sunFlarePositions = null;
+    let sunFlareVelocities = null;
+    let neptuneCirrusMesh = null;
+    let constellationsGroup = null;
+    let voyager1PulseMesh = null;
+    let meteorSystem = null;
+    let meteorPositions = null;
+    let blackHoleJetsGroup = null;
+    let sagittariusACoreMesh = null;
+    let trapeziumStarsGroup = null;
+    let heliosphereMesh = null;
 
     const getTextureForPlanet = (key) => {
       switch (key) {
@@ -234,6 +281,24 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       return cutawayGroup;
     };
 
+    // Procedural Soft Glowing Round Star Texture Canvas
+    const createStarTexture = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+      grad.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
+      grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.25)');
+      grad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 64, 64);
+      const tex = new THREE.CanvasTexture(canvas);
+      return tex;
+    };
+    const starTexture = createStarTexture();
+
     // 4. Ambient Skydome Starfield (20,000 stars split into 3 magnitude size tiers)
     const createStarTier = (count, pointSize, opacityVal) => {
       const geo = trackResource(new THREE.BufferGeometry());
@@ -269,10 +334,13 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
 
       const mat = trackResource(new THREE.PointsMaterial({
-        size: pointSize,
+        size: pointSize * 1.6,
+        map: starTexture,
         vertexColors: true,
         transparent: true,
-        opacity: opacityVal
+        opacity: opacityVal,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
       }));
       scene.add(new THREE.Points(geo, mat));
     };
@@ -284,23 +352,58 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     // Layer C: 1,000 bright named magnitude stars
     createStarTier(1000, 3.0, 0.95);
 
-    // Phase 4 Polish: Ambient Cosmic Dust Floating Particles
-    const dustCount = 2000;
-    const dustGeo = trackResource(new THREE.BufferGeometry());
-    const dustPos = new Float32Array(dustCount * 3);
-    for (let i = 0; i < dustCount; i++) {
-      dustPos[i * 3] = (Math.random() - 0.5) * 300;
-      dustPos[i * 3 + 1] = (Math.random() - 0.5) * 150;
-      dustPos[i * 3 + 2] = (Math.random() - 0.5) * 300;
-    }
-    dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
-    scene.add(new THREE.Points(dustGeo, trackResource(new THREE.PointsMaterial({
-      size: 0.4,
-      color: 0x38bdf8,
-      transparent: true,
-      opacity: 0.25,
-      blending: THREE.AdditiveBlending
-    }))));
+    // 3D Starlight Constellations Overlay Group (Orion, Ursa Major, Cassiopeia, Scorpius)
+    const createConstellations = () => {
+      const group = new THREE.Group();
+      group.visible = false;
+      const mat = trackResource(new THREE.LineBasicMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.65,
+        blending: THREE.AdditiveBlending
+      }));
+
+      const constellationData = [
+        // Orion (Hunter)
+        [
+          [-80, 120, -600], [-30, 90, -600], [40, 110, -600],
+          [-10, 20, -600], [0, 20, -600], [10, 20, -600],
+          [-40, -70, -600], [30, -80, -600]
+        ],
+        // Ursa Major (Big Dipper)
+        [
+          [-300, 400, -500], [-230, 430, -500], [-170, 410, -500],
+          [-120, 350, -500], [-130, 280, -500], [-210, 290, -500], [-230, 360, -500]
+        ],
+        // Cassiopeia (W-Shape)
+        [
+          [200, 500, -450], [260, 560, -450], [310, 520, -450], [370, 570, -450], [420, 510, -450]
+        ],
+        // Scorpius (Scorpion)
+        [
+          [-400, -200, -550], [-350, -180, -550], [-300, -210, -550], [-260, -270, -550],
+          [-280, -340, -550], [-340, -370, -550], [-380, -340, -550]
+        ]
+      ];
+
+      constellationData.forEach(stars => {
+        const points = stars.map(s => new THREE.Vector3(s[0], s[1], s[2]));
+        const geo = trackResource(new THREE.BufferGeometry().setFromPoints(points));
+        group.add(new THREE.Line(geo, mat));
+
+        stars.forEach(s => {
+          const sGeo = trackResource(new THREE.SphereGeometry(0.8, 8, 8));
+          const sMat = trackResource(new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.8 }));
+          const sMesh = new THREE.Mesh(sGeo, sMat);
+          sMesh.position.set(s[0], s[1], s[2]);
+          group.add(sMesh);
+        });
+      });
+
+      scene.add(group);
+      return group;
+    };
+    constellationsGroup = createConstellations();
 
     // 5. The Sun
     const sunData = SPACE_DATA.sun;
@@ -328,12 +431,18 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       }))
     ));
 
-    // Prominence Flares
+    // Prominence Flares & Multi-Arc Glowing Plasma Loops
     solarProminenceGroup = new THREE.Group();
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 8; i++) {
       const loopMesh = new THREE.Mesh(
-        trackResource(new THREE.TorusGeometry(0.8 + Math.random() * 0.4, 0.08, 16, 64, Math.PI)),
-        trackResource(new THREE.MeshBasicMaterial({ color: 0xff5500 }))
+        trackResource(new THREE.TorusGeometry(sunData.size * (0.35 + Math.random() * 0.25), 0.08, 16, 64, Math.PI)),
+        trackResource(new THREE.MeshBasicMaterial({
+          color: i % 2 === 0 ? 0xff3300 : 0xffaa00,
+          transparent: true,
+          opacity: 0.85,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        }))
       );
       loopMesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
       solarProminenceGroup.add(loopMesh);
@@ -351,23 +460,67 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       const pGeo = trackResource(new THREE.SphereGeometry(pData.size, 64, 64));
       const pTex = getTextureForPlanet(key);
       
-      const pMat = key === 'earth'
-        ? trackResource(new THREE.MeshPhongMaterial({
-            map: pTex,
-            specularMap: getEarthSpecularMap(),
-            specular: new THREE.Color(0x5599ff),
-            shininess: 35,
-            bumpMap: getEarthBumpMap(),
-            bumpScale: 0.05,
-            emissiveMap: getEarthNightTexture(),
-            emissive: new THREE.Color(0xffffff),
-            emissiveIntensity: 0.7
-          }))
-        : trackResource(new THREE.MeshStandardMaterial({
-            map: pTex,
-            roughness: 0.4,
-            metalness: 0.1
-          }));
+      let pMat;
+      if (key === 'earth') {
+        pMat = trackResource(new THREE.MeshPhongMaterial({
+          map: pTex,
+          specularMap: getEarthSpecularMap(),
+          specular: new THREE.Color(0x5599ff),
+          shininess: 35,
+          bumpMap: getEarthBumpMap(),
+          bumpScale: 0.05,
+          emissiveMap: getEarthNightTexture(),
+          emissive: new THREE.Color(0xffffff),
+          emissiveIntensity: 0.7
+        }));
+      } else if (key === 'mercury') {
+        pMat = trackResource(new THREE.MeshPhongMaterial({
+          map: pTex,
+          bumpMap: getMercuryBumpMap(),
+          bumpScale: 0.04,
+          specularMap: getMercurySpecularMap(),
+          specular: new THREE.Color(0x444444),
+          shininess: 15
+        }));
+      } else if (key === 'mars') {
+        pMat = trackResource(new THREE.MeshPhongMaterial({
+          map: pTex,
+          bumpMap: getMarsBumpMap(),
+          bumpScale: 0.05,
+          specular: new THREE.Color(0x221100),
+          shininess: 8
+        }));
+      } else if (key === 'jupiter') {
+        pMat = trackResource(new THREE.MeshPhongMaterial({
+          map: pTex,
+          specular: new THREE.Color(0x332211),
+          shininess: 12
+        }));
+      } else if (key === 'saturn') {
+        pMat = trackResource(new THREE.MeshPhongMaterial({
+          map: pTex,
+          specular: new THREE.Color(0x443311),
+          shininess: 15
+        }));
+      } else if (key === 'uranus') {
+        pMat = trackResource(new THREE.MeshPhongMaterial({
+          map: pTex,
+          specular: new THREE.Color(0x225566),
+          shininess: 25
+        }));
+      } else if (key === 'neptune') {
+        pMat = trackResource(new THREE.MeshPhongMaterial({
+          map: pTex,
+          specular: new THREE.Color(0x113366),
+          shininess: 30
+        }));
+      } else {
+        pMat = trackResource(new THREE.MeshStandardMaterial({
+          map: pTex,
+          roughness: 0.4,
+          metalness: 0.1
+        }));
+      }
 
       // 1. Orbital Path Trajectory Ring around the Sun
       if (pData.orbitRadius > 0) {
@@ -403,7 +556,43 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
         earthCutawayGroup = pCutawayGroup;
       }
 
-      // Venus Thick Rotating Sulfurous Cloud Shell
+      // Helper function to create custom Rayleigh limb shaders
+      const createLimbShader = (colorHex, opacityVal, scaleFactor = 1.05) => {
+        return new THREE.Mesh(
+          trackResource(new THREE.SphereGeometry(pData.size * scaleFactor, 32, 32)),
+          trackResource(new THREE.ShaderMaterial({
+            uniforms: { color: { value: new THREE.Color(colorHex) } },
+            vertexShader: `
+              varying vec3 vNormal;
+              void main() {
+                vNormal = normalize(normalMatrix * normal);
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+              }
+            `,
+            fragmentShader: `
+              uniform vec3 color;
+              varying vec3 vNormal;
+              void main() {
+                float rim = pow(0.75 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.8);
+                rim = clamp(rim, 0.0, 1.0);
+                gl_FragColor = vec4(color, rim * ${opacityVal});
+              }
+            `,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            side: THREE.BackSide
+          }))
+        );
+      };
+
+      // Mercury Exosphere Limb Halo
+      if (key === 'mercury') {
+        const mercHalo = createLimbShader(0xa0a0a0, 0.12, 1.03);
+        pMesh.add(mercHalo);
+      }
+
+      // Venus Thick Rotating Sulfurous Cloud Shell & Atmosphere Lightning
       if (key === 'venus') {
         const vCloudGeo = trackResource(new THREE.SphereGeometry(pData.size * 1.03, 64, 64));
         const vCloudMat = trackResource(new THREE.MeshStandardMaterial({
@@ -417,42 +606,33 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
         venusCloudsMesh = new THREE.Mesh(vCloudGeo, vCloudMat);
         venusCloudsMesh.renderOrder = 2;
         pMesh.add(venusCloudsMesh);
+
+        venusLightningLight = trackResource(new THREE.PointLight(0xffff55, 0, 15));
+        venusLightningLight.position.set(0, pData.size * 0.8, pData.size * 0.8);
+        pMesh.add(venusLightningLight);
+
+        pMesh.add(createLimbShader(0xffcc44, 0.35, 1.05));
       }
 
-      // Mars Thin Rusty Atmosphere Limb Glow Shader
+      // Mars Thin Rusty Atmosphere Limb Glow Shader & Dust Storm Shell
       if (key === 'mars') {
-        const marsRayleighMat = trackResource(new THREE.ShaderMaterial({
-          uniforms: { color: { value: new THREE.Color(0xff4400) } },
-          vertexShader: `
-            varying vec3 vNormal;
-            void main() {
-              vNormal = normalize(normalMatrix * normal);
-              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-          `,
-          fragmentShader: `
-            uniform vec3 color;
-            varying vec3 vNormal;
-            void main() {
-              float rim = pow(0.75 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.8);
-              rim = clamp(rim, 0.0, 1.0);
-              gl_FragColor = vec4(color, rim * 0.22);
-            }
-          `,
-          transparent: true,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-          side: THREE.BackSide
-        }));
-        const marsAtmMesh = new THREE.Mesh(
-          trackResource(new THREE.SphereGeometry(pData.size * 1.05, 32, 32)),
-          marsRayleighMat
-        );
+        const marsAtmMesh = createLimbShader(0xff4400, 0.28, 1.05);
         marsAtmMesh.renderOrder = 3;
         pMesh.add(marsAtmMesh);
+
+        const mDustGeo = trackResource(new THREE.SphereGeometry(pData.size * 1.025, 48, 48));
+        const mDustMat = trackResource(new THREE.MeshStandardMaterial({
+          map: getMarsDustStormTexture(),
+          transparent: true,
+          opacity: 0.40,
+          blending: THREE.NormalBlending,
+          depthWrite: false
+        }));
+        marsDustMesh = new THREE.Mesh(mDustGeo, mDustMat);
+        pMesh.add(marsDustMesh);
       }
 
-      // Hyper-Real Earth: Clouds, Atmosphere & Phase 2 3D Cutaway Group
+      // Hyper-Real Earth: Clouds, Atmosphere Shader & Polar Auroras
       if (key === 'earth') {
         const cloudGeo = trackResource(new THREE.SphereGeometry(pData.size * 1.025, 64, 64));
         const cloudMat = trackResource(new THREE.MeshStandardMaterial({
@@ -466,36 +646,120 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
         earthCloudsMesh.renderOrder = 2;
         pMesh.add(earthCloudsMesh);
 
-        // Rayleigh Atmosphere Shader
-        const rayleighMat = trackResource(new THREE.ShaderMaterial({
-          uniforms: { color: { value: new THREE.Color(0x0077ff) } },
-          vertexShader: `
-            varying vec3 vNormal;
-            void main() {
-              vNormal = normalize(normalMatrix * normal);
-              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-          `,
-          fragmentShader: `
-            uniform vec3 color;
-            varying vec3 vNormal;
-            void main() {
-              float rim = pow(0.75 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.8);
-              rim = clamp(rim, 0.0, 1.0);
-              gl_FragColor = vec4(color, rim * 0.45);
-            }
-          `,
-          transparent: true,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-          side: THREE.BackSide
-        }));
-        earthRayleighMesh = new THREE.Mesh(
-          trackResource(new THREE.SphereGeometry(pData.size * 1.05, 48, 48)),
-          rayleighMat
-        );
+        earthRayleighMesh = createLimbShader(0x0077ff, 0.45, 1.05);
         earthRayleighMesh.renderOrder = 3;
         pMesh.add(earthRayleighMesh);
+
+        // ISS (International Space Station) Orbiting Earth
+        const issPivot = new THREE.Group();
+        pMesh.add(issPivot);
+
+        const issGroup = new THREE.Group();
+        const trussGeo = trackResource(new THREE.CylinderGeometry(0.015, 0.015, 0.35, 8));
+        const trussMat = trackResource(new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 }));
+        const trussMesh = new THREE.Mesh(trussGeo, trussMat);
+        trussMesh.rotation.z = Math.PI / 2;
+        issGroup.add(trussMesh);
+
+        const panelGeo = trackResource(new THREE.BoxGeometry(0.12, 0.005, 0.06));
+        const panelMat = trackResource(new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.9, roughness: 0.1 }));
+        const p1 = new THREE.Mesh(panelGeo, panelMat); p1.position.x = -0.15; issGroup.add(p1);
+        const p2 = new THREE.Mesh(panelGeo, panelMat); p2.position.x = 0.15; issGroup.add(p2);
+
+        const coreGeo = trackResource(new THREE.CylinderGeometry(0.03, 0.03, 0.12, 12));
+        const coreMat = trackResource(new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.5, roughness: 0.3 }));
+        issGroup.add(new THREE.Mesh(coreGeo, coreMat));
+
+        issGroup.position.x = pData.size * 1.35;
+        issPivot.add(issGroup);
+        pMesh.userData.issPivot = issPivot;
+        issGroup.userData = { key: 'iss', data: SPACE_DATA.iss, parentMesh: pMesh };
+        planetMeshes.iss = issGroup;
+        interactiveObjects.push(issGroup);
+      }
+
+      // Jupiter: Dual Counter-Rotating Cloud Bands & Amber Atmosphere Halo
+      if (key === 'jupiter') {
+        const jCloudGeo1 = trackResource(new THREE.SphereGeometry(pData.size * 1.015, 64, 64));
+        const jCloudMat1 = trackResource(new THREE.MeshStandardMaterial({
+          map: getJupiterCloudTexture(),
+          transparent: true,
+          opacity: 0.55,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        }));
+        jupiterCloudsEastMesh = new THREE.Mesh(jCloudGeo1, jCloudMat1);
+        pMesh.add(jupiterCloudsEastMesh);
+
+        const jCloudGeo2 = trackResource(new THREE.SphereGeometry(pData.size * 1.020, 64, 64));
+        const jCloudMat2 = trackResource(new THREE.MeshStandardMaterial({
+          map: getJupiterCloudTexture(),
+          transparent: true,
+          opacity: 0.35,
+          blending: THREE.NormalBlending,
+          depthWrite: false
+        }));
+        jupiterCloudsWestMesh = new THREE.Mesh(jCloudGeo2, jCloudMat2);
+        pMesh.add(jupiterCloudsWestMesh);
+
+        pMesh.add(createLimbShader(0xffaa44, 0.30, 1.04));
+      }
+
+      // Saturn: Golden Cloud Band Shell & Pale Gold Halo
+      if (key === 'saturn') {
+        const sCloudGeo = trackResource(new THREE.SphereGeometry(pData.size * 1.015, 64, 64));
+        const sCloudMat = trackResource(new THREE.MeshStandardMaterial({
+          map: getSaturnCloudTexture(),
+          transparent: true,
+          opacity: 0.45,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        }));
+        saturnCloudsMesh = new THREE.Mesh(sCloudGeo, sCloudMat);
+        pMesh.add(saturnCloudsMesh);
+        pMesh.add(createLimbShader(0xeab308, 0.25, 1.04));
+      }
+
+      // Uranus: Methane Ice Cloud Haze & Cyan Halo
+      if (key === 'uranus') {
+        const uCloudGeo = trackResource(new THREE.SphereGeometry(pData.size * 1.015, 64, 64));
+        const uCloudMat = trackResource(new THREE.MeshStandardMaterial({
+          map: getUranusCloudTexture(),
+          transparent: true,
+          opacity: 0.40,
+          blending: THREE.NormalBlending,
+          depthWrite: false
+        }));
+        uranusCloudsMesh = new THREE.Mesh(uCloudGeo, uCloudMat);
+        pMesh.add(uranusCloudsMesh);
+        pMesh.add(createLimbShader(0x06b6d4, 0.35, 1.04));
+      }
+
+      // Neptune: Deep Cobalt Cloud Shell, Cirrus Cloud Streaks & Blue Halo
+      if (key === 'neptune') {
+        const nCloudGeo = trackResource(new THREE.SphereGeometry(pData.size * 1.015, 64, 64));
+        const nCloudMat = trackResource(new THREE.MeshStandardMaterial({
+          map: getNeptuneCloudTexture(),
+          transparent: true,
+          opacity: 0.45,
+          blending: THREE.NormalBlending,
+          depthWrite: false
+        }));
+        neptuneCloudsMesh = new THREE.Mesh(nCloudGeo, nCloudMat);
+        pMesh.add(neptuneCloudsMesh);
+
+        const nCirrusGeo = trackResource(new THREE.SphereGeometry(pData.size * 1.022, 64, 64));
+        const nCirrusMat = trackResource(new THREE.MeshStandardMaterial({
+          map: getNeptuneCloudTexture(),
+          transparent: true,
+          opacity: 0.50,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        }));
+        neptuneCirrusMesh = new THREE.Mesh(nCirrusGeo, nCirrusMat);
+        pMesh.add(neptuneCirrusMesh);
+
+        pMesh.add(createLimbShader(0x2563eb, 0.40, 1.04));
       }
 
       // 2. Earth's Moon (Luna) & Orbit Ring Path
@@ -505,9 +769,13 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
 
         const moonMesh = new THREE.Mesh(
           trackResource(new THREE.SphereGeometry(SPACE_DATA.moon.size, 32, 32)),
-          trackResource(new THREE.MeshStandardMaterial({
+          trackResource(new THREE.MeshPhongMaterial({
             map: getMoonTexture(),
-            roughness: 0.7
+            bumpMap: getMoonBumpMap(),
+            bumpScale: 0.04,
+            specularMap: getMoonSpecularMap(),
+            specular: new THREE.Color(0x333333),
+            shininess: 10
           }))
         );
         const moonCutawayGroup = createPlanetCutawayGroup('moon', SPACE_DATA.moon.size, getMoonTexture());
@@ -676,10 +944,13 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     }
     oortGeo.setAttribute('position', new THREE.BufferAttribute(oortPos, 3));
     scene.add(new THREE.Points(oortGeo, trackResource(new THREE.PointsMaterial({
-      size: 1.1,
+      size: 1.2,
+      map: starTexture,
       color: 0x93c5fd,
       transparent: true,
-      opacity: 0.35
+      opacity: 0.35,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     }))));
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -725,6 +996,34 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       );
       plutoOrbitPathMesh.rotation.x = Math.PI / 2;
       scene.add(plutoOrbitPathMesh);
+    }
+
+    // Voyager 1 Interstellar Deep Space Probe Setup
+    const voyagerData = SPACE_DATA.voyager1;
+    if (voyagerData) {
+      const vGroup = new THREE.Group();
+      const dishGeo = trackResource(new THREE.ConeGeometry(0.35, 0.14, 32));
+      const dishMat = trackResource(new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3, metalness: 0.4 }));
+      const dishMesh = new THREE.Mesh(dishGeo, dishMat);
+      dishMesh.rotation.x = Math.PI / 2;
+      vGroup.add(dishMesh);
+
+      const bodyGeo = trackResource(new THREE.BoxGeometry(0.2, 0.2, 0.2));
+      const bodyMat = trackResource(new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.2 }));
+      const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+      bodyMesh.position.z = -0.14;
+      vGroup.add(bodyMesh);
+
+      const pulseGeo = trackResource(new THREE.RingGeometry(0.4, 0.44, 32));
+      const pulseMat = trackResource(new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending }));
+      voyager1PulseMesh = new THREE.Mesh(pulseGeo, pulseMat);
+      vGroup.add(voyager1PulseMesh);
+
+      vGroup.position.set(110.0, 15.0, -25.0);
+      vGroup.userData = { key: 'voyager1', data: voyagerData };
+      scene.add(vGroup);
+      planetMeshes.voyager1 = vGroup;
+      interactiveObjects.push(vGroup);
     }
 
     // Register Kuiper Belt Pivot for target camera navigation
@@ -800,12 +1099,26 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
 
     galaxyGroup.add(new THREE.Points(starGeo, trackResource(new THREE.PointsMaterial({
-      size: 0.35,
+      size: 0.6,
+      map: starTexture,
       vertexColors: true,
       transparent: true,
       opacity: 0.9,
-      blending: THREE.AdditiveBlending
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     }))));
+
+    // Sagittarius A* Core Engine (Supermassive Black Hole Nucleus)
+    const sagAAccretionGeo = trackResource(new THREE.SphereGeometry(1.8, 32, 32));
+    const sagAAccretionMat = trackResource(new THREE.MeshBasicMaterial({ color: 0xfff3c4, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending }));
+    sagittariusACoreMesh = new THREE.Mesh(sagAAccretionGeo, sagAAccretionMat);
+    galaxyGroup.add(sagittariusACoreMesh);
+
+    const sagAHaloGeo = trackResource(new THREE.RingGeometry(2.0, 4.5, 32));
+    const sagAHaloMat = trackResource(new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide, transparent: true, opacity: 0.65, blending: THREE.AdditiveBlending }));
+    const sagAHalo = new THREE.Mesh(sagAHaloGeo, sagAHaloMat);
+    sagAHalo.rotation.x = Math.PI / 2;
+    sagittariusACoreMesh.add(sagAHalo);
 
     const galaxyTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(6.0, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
     galaxyTargetMesh.position.copy(galaxyGroup.position);
@@ -882,11 +1195,31 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     nebCoreGeo.setAttribute('color', new THREE.BufferAttribute(nebCoreCols, 3));
     nebulaGroup.add(new THREE.Points(nebCoreGeo, trackResource(new THREE.PointsMaterial({
       size: 3.5,
+      map: starTexture,
       vertexColors: true,
       transparent: true,
       opacity: 0.95,
-      blending: THREE.AdditiveBlending
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     }))));
+
+    // Trapezium Star Quadruplet (4 O-Type Supergiant Stars illuminating Orion Nebula)
+    trapeziumStarsGroup = new THREE.Group();
+    [
+      [-1.5, 1.0, 0.5], [1.8, -1.2, -0.4], [-0.8, -1.5, 1.0], [1.2, 1.6, -0.8]
+    ].forEach(p => {
+      const starMesh = new THREE.Mesh(
+        trackResource(new THREE.SphereGeometry(0.6, 16, 16)),
+        trackResource(new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.95 }))
+      );
+      starMesh.position.set(p[0], p[1], p[2]);
+      trapeziumStarsGroup.add(starMesh);
+
+      const pLight = new THREE.PointLight(0x38bdf8, 2.0, 40);
+      pLight.position.set(p[0], p[1], p[2]);
+      trapeziumStarsGroup.add(pLight);
+    });
+    nebulaGroup.add(trapeziumStarsGroup);
 
     const nebulaTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(6.0, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
     nebulaTargetMesh.position.copy(nebulaGroup.position);
@@ -949,16 +1282,41 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       androCols[i * 3 + 1] = androColor.g;
       androCols[i * 3 + 2] = androColor.b;
     }
-    androGeo.setAttribute('position', new THREE.BufferAttribute(androPos, 3));
-    androGeo.setAttribute('color', new THREE.BufferAttribute(androCols, 3));
-
     androGroup.add(new THREE.Points(androGeo, trackResource(new THREE.PointsMaterial({
-      size: 0.4,
+      size: 0.7,
+      map: starTexture,
       vertexColors: true,
       transparent: true,
       opacity: 0.85,
-      blending: THREE.AdditiveBlending
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     }))));
+
+    // Satellite Dwarf Galaxies M32 & M110 orbiting Andromeda halo
+    [[-25, 12, 10], [30, -18, -15]].forEach((pos, idx) => {
+      const dwarfGeo = trackResource(new THREE.BufferGeometry());
+      const dCount = 600;
+      const dPos = new Float32Array(dCount * 3);
+      for (let j = 0; j < dCount; j++) {
+        const dr = Math.random() * 4.5;
+        const dt = Math.random() * Math.PI * 2;
+        const dp = Math.random() * Math.PI;
+        dPos[j * 3] = pos[0] + dr * Math.sin(dp) * Math.cos(dt);
+        dPos[j * 3 + 1] = pos[1] + dr * Math.sin(dp) * Math.sin(dt) * 0.5;
+        dPos[j * 3 + 2] = pos[2] + dr * Math.cos(dp);
+      }
+      dwarfGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
+      const dwarfMesh = new THREE.Points(dwarfGeo, trackResource(new THREE.PointsMaterial({
+        size: 0.8,
+        map: starTexture,
+        color: idx === 0 ? 0xfef08a : 0x7dd3fc,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      })));
+      androGroup.add(dwarfMesh);
+    });
 
     const androTargetMesh = new THREE.Mesh(trackResource(new THREE.SphereGeometry(6.0, 16, 16)), trackResource(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })));
     androTargetMesh.position.copy(androGroup.position);
@@ -1059,11 +1417,13 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
     const cometTailParticles = new THREE.Points(
       cometTailGeo,
       trackResource(new THREE.PointsMaterial({
-        size: 0.7,
+        size: 0.8,
+        map: starTexture,
         color: 0x38bdf8,
         transparent: true,
         opacity: 0.65,
-        blending: THREE.AdditiveBlending
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
       }))
     );
     scene.add(cometTailParticles);
@@ -1228,13 +1588,41 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
         solarProminenceGroup.rotation.x += 0.05 * deltaTime;
       }
 
-      // Rotate Earth & Venus Clouds
-      if (earthCloudsMesh) {
-        earthCloudsMesh.rotation.y += 0.08 * deltaTime;
+      // Rotate Planet Clouds & Atmosphere Layers
+      if (earthCloudsMesh) earthCloudsMesh.rotation.y += 0.08 * deltaTime;
+      if (venusCloudsMesh) venusCloudsMesh.rotation.y += 0.015 * deltaTime;
+      if (jupiterCloudsMesh) jupiterCloudsMesh.rotation.y += 0.04 * deltaTime;
+      if (jupiterCloudsEastMesh) jupiterCloudsEastMesh.rotation.y += 0.05 * deltaTime;
+      if (jupiterCloudsWestMesh) jupiterCloudsWestMesh.rotation.y -= 0.03 * deltaTime;
+      if (saturnCloudsMesh) saturnCloudsMesh.rotation.y += 0.025 * deltaTime;
+      if (uranusCloudsMesh) uranusCloudsMesh.rotation.y += 0.018 * deltaTime;
+      if (neptuneCloudsMesh) neptuneCloudsMesh.rotation.y += 0.022 * deltaTime;
+      if (neptuneCirrusMesh) neptuneCirrusMesh.rotation.y += 0.06 * deltaTime;
+      if (marsDustMesh) marsDustMesh.rotation.y += 0.006 * deltaTime;
+
+      // Venus Cloud Electrical Lightning Sparks
+      if (venusLightningLight) {
+        venusLightningLight.intensity = Math.random() < 0.04 ? 12.0 : 0;
       }
-      if (venusCloudsMesh) {
-        venusCloudsMesh.rotation.y += 0.015 * deltaTime;
+
+      // Toggle 3D Constellations Overlay
+      if (constellationsGroup) {
+        constellationsGroup.visible = !!isConstellationsOpenRef.current;
       }
+
+      // Animate ISS Satellite & Voyager 1 Radio Pulse Ring
+      if (planetMeshes.iss && planetMeshes.iss.parent && planetMeshes.iss.parent.userData.issPivot) {
+        planetMeshes.iss.parent.userData.issPivot.rotation.y += 0.25 * deltaTime * currentSpeed;
+      }
+      if (voyager1PulseMesh) {
+        const pScale = 1.0 + (time * 2.0) % 2.5;
+        voyager1PulseMesh.scale.setScalar(pScale);
+        voyager1PulseMesh.material.opacity = Math.max(0, 1.0 - (pScale - 1.0) / 2.5);
+      }
+
+      // Animate Deep Space Realm Features (Sagittarius A*, Trapezium Stars)
+      if (sagittariusACoreMesh) sagittariusACoreMesh.rotation.y += 0.4 * deltaTime;
+      if (trapeziumStarsGroup) trapeziumStarsGroup.rotation.y += 0.05 * deltaTime;
 
       // Toggle 3D Internal Core Cutaway Mode View for All Planets & Sun
       const isCutawayActive = isCutawayOpenRef.current;
@@ -1251,9 +1639,18 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
             if (earthCloudsMesh) earthCloudsMesh.visible = !showCutaway;
             if (earthRayleighMesh) earthRayleighMesh.visible = !showCutaway;
           }
-          if (k === 'venus' && venusCloudsMesh) {
-            venusCloudsMesh.visible = !showCutaway;
+          if (k === 'venus' && venusCloudsMesh) venusCloudsMesh.visible = !showCutaway;
+          if (k === 'jupiter') {
+            if (jupiterCloudsEastMesh) jupiterCloudsEastMesh.visible = !showCutaway;
+            if (jupiterCloudsWestMesh) jupiterCloudsWestMesh.visible = !showCutaway;
           }
+          if (k === 'saturn' && saturnCloudsMesh) saturnCloudsMesh.visible = !showCutaway;
+          if (k === 'uranus' && uranusCloudsMesh) uranusCloudsMesh.visible = !showCutaway;
+          if (k === 'neptune') {
+            if (neptuneCloudsMesh) neptuneCloudsMesh.visible = !showCutaway;
+            if (neptuneCirrusMesh) neptuneCirrusMesh.visible = !showCutaway;
+          }
+          if (k === 'mars' && marsDustMesh) marsDustMesh.visible = !showCutaway;
 
           if (showCutaway) {
             m.userData.cutawayGroup.rotation.y += 0.2 * deltaTime;
@@ -1345,14 +1742,27 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
 
       if (currentSelectedKey !== prevSelectedKey) {
         prevSelectedKey = currentSelectedKey;
+        sphericalAngleRef.current = { theta: 0.3, phi: Math.PI / 2.4 };
         const targetData = SPACE_DATA[currentSelectedKey];
         if (targetData) {
           if (currentSelectedKey === 'solarsystem') {
-            targetZoomDistanceRef.current = 65.0;
+            targetZoomDistanceRef.current = 55.0;
           } else if (currentSelectedKey === 'kuiperbelt') {
+            targetZoomDistanceRef.current = 65.0;
+          } else if (currentSelectedKey === 'galaxy') {
             targetZoomDistanceRef.current = 75.0;
+          } else if (currentSelectedKey === 'andromeda') {
+            targetZoomDistanceRef.current = 55.0;
+          } else if (currentSelectedKey === 'nebula') {
+            targetZoomDistanceRef.current = 45.0;
+          } else if (currentSelectedKey === 'blackhole') {
+            targetZoomDistanceRef.current = 24.0;
+          } else if (currentSelectedKey === 'voyager1') {
+            targetZoomDistanceRef.current = 10.0;
+          } else if (currentSelectedKey === 'iss') {
+            targetZoomDistanceRef.current = 8.0;
           } else {
-            targetZoomDistanceRef.current = targetData.size ? Math.max(3.5, targetData.size * 6.0) : 35;
+            targetZoomDistanceRef.current = targetData.size ? Math.max(3.5, targetData.size * 4.5) : 30;
           }
         }
       }
@@ -1370,7 +1780,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
         targetZoomDistanceRef.current = zoomDistanceRef.current + zoomVelocityRef.current;
       }
 
-      zoomDistanceRef.current += (targetZoomDistanceRef.current - zoomDistanceRef.current) * 0.1;
+      zoomDistanceRef.current += (targetZoomDistanceRef.current - zoomDistanceRef.current) * 0.12;
 
       zoomDistanceRef.current = THREE.MathUtils.clamp(
         zoomDistanceRef.current + zoomVelocityRef.current,
@@ -1379,7 +1789,7 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       );
       zoomVelocityRef.current *= 0.88;
 
-      cameraTargetRef.current.lerp(targetPosVec, 0.08);
+      cameraTargetRef.current.lerp(targetPosVec, 0.15);
 
       const dist = zoomDistanceRef.current;
       const theta = sphericalAngleRef.current.theta;
@@ -1393,6 +1803,15 @@ export default function ThreeCanvas({ selectedBodyKey, onPlanetClick, timeSpeed,
       camera.lookAt(cameraTargetRef.current);
 
       composer.render();
+
+      if (setRenderStats && Math.random() < 0.05) {
+        setRenderStats({
+          drawCalls: renderer.info.render.calls,
+          triangles: renderer.info.render.triangles,
+          geometries: renderer.info.memory.geometries,
+          textures: renderer.info.memory.textures
+        });
+      }
     };
 
     animate();

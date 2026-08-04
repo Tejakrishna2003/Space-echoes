@@ -30,7 +30,9 @@ class SpaceAudioEngine {
       andromeda: { base: 200.0, chord: 300.0, sub: 100.0, filter: 1600 },
       blackhole: { base: 40.0, chord: 60.0, sub: 20.0, filter: 200 },
       nebula: { base: 180.0, chord: 270.0, sub: 90.0, filter: 1400 },
-      pluto: { base: 90.0, chord: 135.0, sub: 45.0, filter: 400 }
+      pluto: { base: 90.0, chord: 135.0, sub: 45.0, filter: 400 },
+      iss: { base: 220.0, chord: 330.0, sub: 110.0, filter: 1200 },
+      voyager1: { base: 60.0, chord: 90.0, sub: 30.0, filter: 300 }
     };
 
     this.currentBody = 'earth';
@@ -117,6 +119,20 @@ class SpaceAudioEngine {
     this.osc2.frequency.exponentialRampToValueAtTime(freqs.chord, now + 1.5);
     this.subOsc.frequency.exponentialRampToValueAtTime(freqs.sub, now + 1.5);
     this.filter.frequency.exponentialRampToValueAtTime(freqs.filter, now + 1.5);
+  }
+
+  setMasterPitch(multiplier = 1.0) {
+    if (!this.ctx || !this.bodyFreqs[this.currentBody]) return;
+    const freqs = this.bodyFreqs[this.currentBody];
+    const now = this.ctx.currentTime;
+
+    const base = Math.max(20, freqs.base * multiplier);
+    const chord = Math.max(30, freqs.chord * multiplier);
+    const sub = Math.max(10, freqs.sub * multiplier);
+
+    if (this.osc1) this.osc1.frequency.exponentialRampToValueAtTime(base, now + 0.1);
+    if (this.osc2) this.osc2.frequency.exponentialRampToValueAtTime(chord, now + 0.1);
+    if (this.subOsc) this.subOsc.frequency.exponentialRampToValueAtTime(sub, now + 0.1);
   }
 
   toggleMute() {

@@ -703,3 +703,188 @@ export function getPlutoTexture() {
   });
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. MERCURY BUMP & SPECULAR MAPS (Detail Upgrade)
+// ─────────────────────────────────────────────────────────────────────────────
+export function getMercuryBumpMap() {
+  return createNoiseCanvas('mercury_bump_2048', 2048, 1024, (ctx, w, h) => {
+    ctx.fillStyle = '#666666';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#111111';
+    for (let i = 0; i < 220; i++) {
+      const x = Math.random() * w;
+      const y = Math.random() * h;
+      const r = Math.random() * 45 + 10;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(x, y, r * 1.05, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#111111';
+    }
+  });
+}
+
+export function getMercurySpecularMap() {
+  return createNoiseCanvas('mercury_specular_2048', 2048, 1024, (ctx, w, h) => {
+    ctx.fillStyle = '#222222';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#666666';
+    for (let i = 0; i < 300; i++) {
+      ctx.beginPath(); ctx.arc(Math.random() * w, Math.random() * h, Math.random() * 15 + 3, 0, Math.PI * 2); ctx.fill();
+    }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 9. MARS BUMP & DUST STORM TEXTURES (Detail Upgrade)
+// ─────────────────────────────────────────────────────────────────────────────
+export function getMarsBumpMap() {
+  return createNoiseCanvas('mars_bump_2048', 2048, 1024, (ctx, w, h) => {
+    ctx.fillStyle = '#555555';
+    ctx.fillRect(0, 0, w, h);
+
+    // Valles Marineris Grand Canyon Slash
+    ctx.strokeStyle = '#050505';
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    ctx.moveTo(w * 0.25, h * 0.52);
+    ctx.lineTo(w * 0.45, h * 0.55);
+    ctx.stroke();
+
+    // Olympus Mons Shield Volcano Bump
+    const omX = w * 0.18;
+    const omY = h * 0.45;
+    const omGrad = ctx.createRadialGradient(omX, omY, 5, omX, omY, 70);
+    omGrad.addColorStop(0, '#ffffff');
+    omGrad.addColorStop(0.5, '#aaaaaa');
+    omGrad.addColorStop(1, '#555555');
+    ctx.fillStyle = omGrad;
+    ctx.beginPath(); ctx.arc(omX, omY, 70, 0, Math.PI * 2); ctx.fill();
+
+    // Polar Caps (High elevation)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h * 0.08);
+    ctx.fillRect(0, h * 0.92, w, h * 0.08);
+  });
+}
+
+export function getMarsDustStormTexture() {
+  return createNoiseCanvas('mars_dust_2048', 2048, 1024, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(230, 140, 80, 0.35)';
+    for (let i = 0; i < 400; i++) {
+      ctx.beginPath();
+      ctx.ellipse(Math.random() * w, Math.random() * h, Math.random() * 120 + 30, Math.random() * 25 + 5, Math.random() * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. MOON BUMP & SPECULAR MAPS (Detail Upgrade)
+// ─────────────────────────────────────────────────────────────────────────────
+export function getMoonBumpMap() {
+  return createNoiseCanvas('moon_bump_2048', 2048, 1024, (ctx, w, h) => {
+    ctx.fillStyle = '#666666';
+    ctx.fillRect(0, 0, w, h);
+    // Dark Mare Basins
+    ctx.fillStyle = '#1a1a1a';
+    for (let i = 0; i < 80; i++) {
+      ctx.beginPath(); ctx.ellipse(Math.random() * w, Math.random() * h, Math.random() * 130 + 30, Math.random() * 90 + 20, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    // Bright Crater Rims
+    ctx.fillStyle = '#ffffff';
+    for (let i = 0; i < 350; i++) {
+      ctx.beginPath(); ctx.arc(Math.random() * w, Math.random() * h, Math.random() * 10 + 2, 0, Math.PI * 2); ctx.fill();
+    }
+  });
+}
+
+export function getMoonSpecularMap() {
+  return createNoiseCanvas('moon_specular_2048', 2048, 1024, (ctx, w, h) => {
+    ctx.fillStyle = '#151515';
+    ctx.fillRect(0, 0, w, h);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 11. GIANT PLANETS ANIMATED CLOUD TEXTURES & ATMOSPHERE FEATURES
+// ─────────────────────────────────────────────────────────────────────────────
+export function getJupiterCloudTexture() {
+  return createNoiseCanvas('jupiter_clouds_2048', 2048, 1024, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(255, 235, 200, 0.35)';
+    for (let i = 0; i < 35; i++) {
+      const y = (h / 35) * i;
+      ctx.fillRect(0, y, w, (h / 35) * 0.4);
+    }
+    // Great Red Spot Swirl
+    const grsX = w * 0.60;
+    const grsY = h * 0.62;
+    const grsGrad = ctx.createRadialGradient(grsX, grsY, 5, grsX, grsY, 65);
+    grsGrad.addColorStop(0, 'rgba(220, 50, 20, 0.85)');
+    grsGrad.addColorStop(0.6, 'rgba(240, 130, 40, 0.5)');
+    grsGrad.addColorStop(1, 'rgba(240, 130, 40, 0)');
+    ctx.fillStyle = grsGrad;
+    ctx.beginPath(); ctx.ellipse(grsX, grsY, 65, 42, -0.1, 0, Math.PI * 2); ctx.fill();
+  });
+}
+
+export function getSaturnCloudTexture() {
+  return createNoiseCanvas('saturn_clouds_2048', 2048, 1024, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(245, 225, 175, 0.3)';
+    for (let i = 0; i < 25; i++) {
+      const y = (h / 25) * i;
+      ctx.fillRect(0, y, w, (h / 25) * 0.35);
+    }
+    // North Pole Hexagon Storm
+    ctx.fillStyle = 'rgba(180, 160, 100, 0.6)';
+    ctx.beginPath();
+    const hexX = w * 0.5;
+    const hexY = h * 0.08;
+    const r = 45;
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 3) * i;
+      const x = hexX + r * Math.cos(angle);
+      const y = hexY + r * Math.sin(angle);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath(); ctx.fill();
+  });
+}
+
+export function getUranusCloudTexture() {
+  return createNoiseCanvas('uranus_clouds_2048', 2048, 1024, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(200, 245, 255, 0.3)';
+    for (let i = 0; i < 200; i++) {
+      ctx.beginPath();
+      ctx.ellipse(Math.random() * w, Math.random() * h, Math.random() * 160 + 40, Math.random() * 20 + 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
+export function getNeptuneCloudTexture() {
+  return createNoiseCanvas('neptune_clouds_2048', 2048, 1024, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(120, 200, 255, 0.35)';
+    for (let i = 0; i < 220; i++) {
+      ctx.beginPath();
+      ctx.ellipse(Math.random() * w, Math.random() * h, Math.random() * 140 + 30, Math.random() * 18 + 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Great Dark Spot
+    const gdsX = w * 0.40;
+    const gdsY = h * 0.58;
+    const gdsGrad = ctx.createRadialGradient(gdsX, gdsY, 5, gdsX, gdsY, 55);
+    gdsGrad.addColorStop(0, 'rgba(10, 30, 90, 0.85)');
+    gdsGrad.addColorStop(0.7, 'rgba(30, 90, 180, 0.4)');
+    gdsGrad.addColorStop(1, 'rgba(30, 90, 180, 0)');
+    ctx.fillStyle = gdsGrad;
+    ctx.beginPath(); ctx.ellipse(gdsX, gdsY, 55, 35, 0.1, 0, Math.PI * 2); ctx.fill();
+  });
+}
+
+

@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { SPACE_DATA } from '../data/spaceData';
 
-export default function ScannerPanel({ selectedBodyKey, timeSpeed, setTimeSpeed, onExplore, onNextPlanet }) {
+export default function ScannerPanel({ selectedBodyKey, timeSpeed, setTimeSpeed, onExplore, onNextPlanet, renderStats, audioPitch, setAudioPitch }) {
   const body = SPACE_DATA[selectedBodyKey] || SPACE_DATA.earth;
+  const [elapsedYears, setElapsedYears] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsedYears(prev => parseFloat((prev + 0.02 * (timeSpeed || 1)).toFixed(2)));
+    }, 200);
+    return () => clearInterval(timer);
+  }, [timeSpeed]);
+
+  const simYear = 2026 + Math.floor(elapsedYears);
 
   return (
     <div
@@ -23,8 +33,19 @@ export default function ScannerPanel({ selectedBodyKey, timeSpeed, setTimeSpeed,
         </span>
       </div>
 
+      {/* Simulated Epoch Time Counter */}
+      <div className="mb-3 p-2 rounded bg-black/60 border border-emerald-500/30 flex justify-between items-center text-[10px] font-label-sm">
+        <div className="text-gray-400 flex items-center space-x-1.5">
+          <span className="material-symbols-outlined text-xs text-emerald-400">schedule</span>
+          <span>SIMULATED EPOCH</span>
+        </div>
+        <div className="text-emerald-300 font-mono font-bold">
+          YEAR {simYear} (+{elapsedYears.toFixed(1)}y)
+        </div>
+      </div>
+
       {/* Speed Slider */}
-      <div className="mb-md space-y-1.5">
+      <div className="mb-3 space-y-1.5">
         <div className="flex justify-between text-[10px] font-label-sm text-on-surface-variant">
           <span>ORBITAL TIME SPEED</span>
           <span className="text-primary-fixed font-bold tracking-wider">{timeSpeed}x</span>
@@ -39,6 +60,33 @@ export default function ScannerPanel({ selectedBodyKey, timeSpeed, setTimeSpeed,
           className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400"
         />
       </div>
+
+      {/* Audio Pitch Modulator Slider */}
+      {setAudioPitch && (
+        <div className="mb-md space-y-1.5">
+          <div className="flex justify-between text-[10px] font-label-sm text-on-surface-variant">
+            <span>COSMIC SYNTH PITCH</span>
+            <span className="text-amber-400 font-bold tracking-wider">{audioPitch || 1.0}x</span>
+          </div>
+          <input
+            type="range"
+            min="0.5"
+            max="2.5"
+            step="0.1"
+            value={audioPitch || 1.0}
+            onChange={(e) => setAudioPitch(parseFloat(e.target.value))}
+            className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-amber-400"
+          />
+        </div>
+      )}
+
+      {/* WebGL Telemetry Stats */}
+      {renderStats && (
+        <div className="mb-3 grid grid-cols-2 gap-1.5 text-[9px] font-mono text-gray-400 bg-white/5 p-2 rounded border border-white/10">
+          <div>CALLS: <span className="text-emerald-300 font-bold">{renderStats.drawCalls || 0}</span></div>
+          <div>POLYS: <span className="text-emerald-300 font-bold">{((renderStats.triangles || 0) / 1000).toFixed(1)}k</span></div>
+        </div>
+      )}
 
       <div className="flex space-x-2">
         <button

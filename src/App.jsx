@@ -8,6 +8,7 @@ import RealmSwitcher from './components/RealmSwitcher';
 import RealmInfoPanel from './components/RealmInfoPanel';
 import ScannerPanel from './components/ScannerPanel';
 import CodexModal from './components/CodexModal';
+import KeyboardHelpModal from './components/KeyboardHelpModal';
 import StartOverlay from './components/StartOverlay';
 import AudioVisualizer from './components/AudioVisualizer';
 
@@ -18,9 +19,13 @@ export default function App() {
   const [isAudioMuted, setIsAudioMuted] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [modalData, setModalData] = useState(null);
   const [fps, setFps] = useState(60);
   const [isCutawayOpen, setIsCutawayOpen] = useState(false);
+  const [renderStats, setRenderStats] = useState(null);
+  const [isConstellationsOpen, setIsConstellationsOpen] = useState(false);
+  const [audioPitch, setAudioPitch] = useState(1.0);
 
   const supportedCutawayKeys = ['sun', 'mercury', 'venus', 'earth', 'moon', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'];
 
@@ -69,6 +74,20 @@ export default function App() {
     spaceAudioEngine.playChime(1200, 0.4);
   }, []);
 
+  const handleToggleConstellations = useCallback(() => {
+    setIsConstellationsOpen(prev => !prev);
+    spaceAudioEngine.playChime(950, 0.3);
+  }, []);
+
+  const handleAudioPitchChange = useCallback((pitchVal) => {
+    setAudioPitch(pitchVal);
+    spaceAudioEngine.setMasterPitch(pitchVal);
+  }, []);
+
+  const handleToggleHelp = useCallback(() => {
+    setIsHelpOpen(prev => !prev);
+  }, []);
+
   const handleEnter = useCallback(() => {
     setHasStarted(true);
     handleToggleAudio();
@@ -83,16 +102,19 @@ export default function App() {
 
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
+    setIsHelpOpen(false);
   }, []);
 
-  // Keyboard Shortcuts: M, Z, C (Cutaway), Esc, 1-9 & 0 for direct jump
+  // Keyboard Shortcuts: M, Z, C, K, ?, Esc, 1-9 & 0 for direct jump
   useEffect(() => {
-    const bodyKeysOrder = ['sun', 'solarsystem', 'mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'galaxy', 'kuiperbelt', 'nebula', 'andromeda', 'blackhole'];
+    const bodyKeysOrder = ['sun', 'solarsystem', 'mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'galaxy', 'kuiperbelt', 'nebula', 'andromeda', 'blackhole', 'iss', 'voyager1'];
 
     const handleKeyDown = (e) => {
       if (e.key.toLowerCase() === 'm') handleToggleAudio();
       if (e.key.toLowerCase() === 'z') handleToggleZen();
       if (e.key.toLowerCase() === 'c') handleToggleCutaway();
+      if (e.key.toLowerCase() === 'k') handleToggleConstellations();
+      if (e.key === '?' || e.key.toLowerCase() === 'h') handleToggleHelp();
       if (e.key === 'Escape') handleCloseModal();
 
       if (e.key >= '1' && e.key <= '9') {
@@ -105,7 +127,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleToggleAudio, handleToggleZen, handleToggleCutaway, handleCloseModal]);
+  }, [handleToggleAudio, handleToggleZen, handleToggleCutaway, handleToggleConstellations, handleToggleHelp, handleCloseModal]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-surface-container-lowest text-on-surface select-none cursor-crosshair">
@@ -123,6 +145,9 @@ export default function App() {
         timeSpeed={timeSpeed}
         setFps={setFps}
         isCutawayOpen={isCutawayOpen}
+        hasStarted={hasStarted}
+        setRenderStats={setRenderStats}
+        isConstellationsOpen={isConstellationsOpen}
       />
 
       {/* Top Header HUD Navigation */}
@@ -135,6 +160,9 @@ export default function App() {
         onOpenCodex={handleOpenModal}
         isCutawayOpen={isCutawayOpen}
         onToggleCutaway={handleToggleCutaway}
+        onOpenHelp={handleToggleHelp}
+        isConstellationsOpen={isConstellationsOpen}
+        onToggleConstellations={handleToggleConstellations}
       />
 
       {/* Right Side Planet Switcher Pips */}
@@ -157,6 +185,9 @@ export default function App() {
         setTimeSpeed={setTimeSpeed}
         onExplore={handleOpenModal}
         onNextPlanet={handleNextPlanet}
+        renderStats={renderStats}
+        audioPitch={audioPitch}
+        setAudioPitch={handleAudioPitchChange}
       />
 
       {/* Footer Navigation Bar */}
@@ -188,7 +219,7 @@ export default function App() {
           </span>
         </button>
 
-        {selectedBodyKey === 'earth' && (
+        {supportedCutawayKeys.includes(selectedBodyKey) && (
           <button
             onClick={handleToggleCutaway}
             className="group flex flex-col items-center space-y-1 focus:outline-none"
@@ -203,14 +234,14 @@ export default function App() {
         )}
 
         <button
-          onClick={() => handleSelectBody('blackhole')}
+          onClick={() => handleSelectBody('voyager1')}
           className="group flex flex-col items-center space-y-1 focus:outline-none"
         >
-          <div className="w-10 h-10 rounded-full border border-orange-500/40 flex items-center justify-center group-hover:border-orange-400 group-hover:bg-orange-500/20 transition-all">
-            <span className="material-symbols-outlined text-orange-400 text-xl">contrast</span>
+          <div className="w-10 h-10 rounded-full border border-amber-500/40 flex items-center justify-center group-hover:border-amber-400 group-hover:bg-amber-500/20 transition-all">
+            <span className="material-symbols-outlined text-amber-400 text-xl">satellite_alt</span>
           </div>
-          <span className="font-label-sm text-[10px] tracking-widest text-orange-300 group-hover:text-orange-200 uppercase">
-            SINGULARITY
+          <span className="font-label-sm text-[10px] tracking-widest text-amber-300 group-hover:text-amber-200 uppercase">
+            VOYAGER 1 (160 AU)
           </span>
         </button>
       </footer>
@@ -220,6 +251,12 @@ export default function App() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         bodyData={modalData}
+      />
+
+      {/* Keyboard Control Guide Modal */}
+      <KeyboardHelpModal
+        isOpen={isHelpOpen}
+        onClose={handleCloseModal}
       />
 
       {/* Start Audio Prompt Overlay */}
