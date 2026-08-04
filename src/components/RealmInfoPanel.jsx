@@ -34,30 +34,15 @@ export default function RealmInfoPanel({ selectedBodyKey, fps, isCutawayOpen }) 
         {body.desc}
       </p>
 
-      {/* Earth Cutaway Active Layer Breakdown */}
-      {selectedBodyKey === 'earth' && isCutawayOpen && (
+      {/* Universal 3D Cutaway Active Layer Breakdown */}
+      {['sun', 'mercury', 'venus', 'earth', 'moon', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'].includes(selectedBodyKey) && isCutawayOpen && (
         <div className="mt-3 p-3 rounded bg-black/80 border border-amber-400/50 backdrop-blur-md animate-fadeIn">
-          <div className="text-amber-400 font-bold text-xs uppercase tracking-widest flex items-center space-x-2 mb-2">
+          <div className="text-amber-400 font-bold text-xs uppercase tracking-widest flex items-center space-x-2 mb-1.5">
             <span className="material-symbols-outlined text-sm animate-spin-slow">layers</span>
             <span>3D GEOLOGICAL CUTAWAY ACTIVE</span>
           </div>
-          <div className="space-y-1.5 text-[10px] font-label-sm">
-            <div className="flex justify-between items-center text-emerald-300">
-              <span>CRUST (SURFACE)</span>
-              <span className="font-bold">0 – 70 KM</span>
-            </div>
-            <div className="flex justify-between items-center text-red-400">
-              <span>MANTLE (MAGMA ROCK)</span>
-              <span className="font-bold">2,900 KM</span>
-            </div>
-            <div className="flex justify-between items-center text-orange-400">
-              <span>OUTER CORE (MOLTEN IRON)</span>
-              <span className="font-bold">2,200 KM</span>
-            </div>
-            <div className="flex justify-between items-center text-yellow-200">
-              <span>INNER CORE (SOLID IRON-NICKEL)</span>
-              <span className="font-bold">1,220 KM</span>
-            </div>
+          <div className="text-[10px] font-label-sm text-emerald-300 leading-relaxed font-semibold">
+            {body.structure || 'Internal Core Spheres Exposed'}
           </div>
         </div>
       )}

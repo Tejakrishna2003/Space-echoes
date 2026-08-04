@@ -22,10 +22,12 @@ export default function App() {
   const [fps, setFps] = useState(60);
   const [isCutawayOpen, setIsCutawayOpen] = useState(false);
 
+  const supportedCutawayKeys = ['sun', 'mercury', 'venus', 'earth', 'moon', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'];
+
   const handleSelectBody = useCallback((bodyKey) => {
     if (!SPACE_DATA[bodyKey]) return;
     setSelectedBodyKey(bodyKey);
-    if (bodyKey !== 'earth') {
+    if (!supportedCutawayKeys.includes(bodyKey)) {
       setIsCutawayOpen(false);
     }
     spaceAudioEngine.setBody(bodyKey);
@@ -42,7 +44,7 @@ export default function App() {
     setSelectedBodyKey(prevKey => {
       const idx = keys.indexOf(prevKey);
       const nextKey = keys[(idx + 1) % keys.length];
-      if (nextKey !== 'earth') setIsCutawayOpen(false);
+      if (!supportedCutawayKeys.includes(nextKey)) setIsCutawayOpen(false);
       spaceAudioEngine.setBody(nextKey);
       spaceAudioEngine.playChime(783.99, 0.35);
       return nextKey;

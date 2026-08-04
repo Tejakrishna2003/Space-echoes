@@ -46,7 +46,7 @@ export default function HeaderHUD({
 
         {/* Controls & Mobile Menu Toggle */}
         <div className="flex items-center space-x-2 sm:space-x-md text-primary">
-          {selectedBodyKey === 'earth' && (
+          {['sun', 'mercury', 'venus', 'earth', 'moon', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'].includes(selectedBodyKey) && (
             <button
               onClick={onToggleCutaway}
               className={`px-2 py-1 rounded font-label-sm text-[10px] tracking-wider uppercase transition-all flex items-center space-x-1 border ${
@@ -54,7 +54,7 @@ export default function HeaderHUD({
                   ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.4)] font-bold'
                   : 'bg-white/5 text-primary border-white/20 hover:bg-white/10'
               }`}
-              title="Toggle 3D Earth Core Cutaway (C)"
+              title="Toggle 3D Internal Core Cutaway (C)"
             >
               <span className="material-symbols-outlined text-sm">layers</span>
               <span>{isCutawayOpen ? 'SURFACE [C]' : 'CUTAWAY [C]'}</span>
